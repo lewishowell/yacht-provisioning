@@ -1,14 +1,10 @@
-import serverless from 'serverless-http';
-
-let handler: any;
-
-try {
-  const { app } = require('../server/src/app');
-  handler = serverless(app);
-} catch (err: any) {
-  handler = (_req: any, res: any) => {
+export default async function handler(req: any, res: any) {
+  try {
+    const serverless = require('serverless-http');
+    const { app } = require('../server/src/app');
+    const wrapped = serverless(app);
+    return wrapped(req, res);
+  } catch (err: any) {
     res.status(500).json({ error: err.message, stack: err.stack });
-  };
+  }
 }
-
-export default handler;
