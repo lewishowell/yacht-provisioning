@@ -14,7 +14,6 @@ import {
   useAddListItem,
   useDeleteListItem,
   usePurchaseItem,
-  useUpdateListItem,
 } from '../hooks/useProvisioningLists';
 import type { Category, ListStatus } from '../types';
 
@@ -44,7 +43,6 @@ export function ListDetailPage() {
   const addItem = useAddListItem();
   const deleteItem = useDeleteListItem();
   const purchaseItem = usePurchaseItem();
-  const _updateItem = useUpdateListItem();
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [newItem, setNewItem] = useState({
