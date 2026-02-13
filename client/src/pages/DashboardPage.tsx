@@ -55,7 +55,7 @@ export function DashboardPage() {
     );
   }
 
-  const s = (stats ?? {
+  const defaults: DashboardStats = {
     totalItems: 0,
     lowStockCount: 0,
     activeLists: 0,
@@ -63,7 +63,8 @@ export function DashboardPage() {
     lowStockItems: [],
     expiringSoon: [],
     recentLists: [],
-  }) as DashboardStats;
+  };
+  const s = { ...defaults, ...stats };
 
   return (
     <div>
