@@ -1,7 +1,7 @@
 {
   "installCommand": "npm install",
-  "buildCommand": "npm run build -w client",
-  "outputDirectory": "client/dist",
+  "buildCommand": "npm run build -w client && mv client/dist dist",
+  "outputDirectory": "dist",
   "framework": null,
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api" },
