@@ -64,7 +64,7 @@ export function DashboardPage() {
     expiringSoon: [],
     recentLists: [],
   };
-  const s = { ...defaults, ...stats };
+  const s: DashboardStats = { ...defaults, ...stats };
 
   return (
     <div>
