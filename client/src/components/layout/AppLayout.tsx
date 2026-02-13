@@ -1,0 +1,134 @@
+import { Outlet, NavLink, useLocation } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
+import {
+  LayoutDashboard,
+  Package,
+  ClipboardList,
+  LogOut,
+  Menu,
+  X,
+  Anchor,
+} from 'lucide-react';
+import { useState } from 'react';
+
+const navItems = [
+  { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/inventory', icon: Package, label: 'Inventory' },
+  { to: '/provisioning', icon: ClipboardList, label: 'Provisioning' },
+];
+
+export function AppLayout() {
+  const { user, logout } = useAuth();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const location = useLocation();
+
+  return (
+    <div className="min-h-screen flex flex-col md:flex-row">
+      {/* Mobile header */}
+      <header className="md:hidden flex items-center justify-between bg-navy text-white p-4 no-print">
+        <div className="flex items-center gap-2">
+          <Anchor className="h-6 w-6 text-teal-light" />
+          <span className="font-bold text-lg">YachtProv</span>
+        </div>
+        <button onClick={() => setSidebarOpen(!sidebarOpen)}>
+          {sidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+        </button>
+      </header>
+
+      {/* Sidebar */}
+      <aside
+        className={`no-print bg-navy text-white w-64 flex-shrink-0 flex flex-col transition-transform duration-200 ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        } md:translate-x-0 fixed md:sticky top-0 h-screen z-40`}
+      >
+        <div className="hidden md:flex items-center gap-3 p-6 border-b border-navy-light">
+          <Anchor className="h-8 w-8 text-teal-light" />
+          <span className="font-bold text-xl">YachtProv</span>
+        </div>
+
+        <nav className="flex-1 p-4 space-y-1">
+          {navItems.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.to === '/'}
+              onClick={() => setSidebarOpen(false)}
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                  isActive
+                    ? 'bg-ocean text-white'
+                    : 'text-gray-300 hover:bg-navy-light hover:text-white'
+                }`
+              }
+            >
+              <item.icon className="h-5 w-5" />
+              {item.label}
+            </NavLink>
+          ))}
+        </nav>
+
+        <div className="p-4 border-t border-navy-light">
+          <div className="flex items-center gap-3 mb-3">
+            {user?.avatarUrl ? (
+              <img
+                src={user.avatarUrl}
+                alt=""
+                className="h-8 w-8 rounded-full"
+              />
+            ) : (
+              <div className="h-8 w-8 rounded-full bg-ocean flex items-center justify-center text-sm font-bold">
+                {user?.name?.[0] ?? '?'}
+              </div>
+            )}
+            <div className="truncate">
+              <p className="text-sm font-medium truncate">{user?.name}</p>
+              <p className="text-xs text-gray-400 truncate">{user?.email}</p>
+            </div>
+          </div>
+          <button
+            onClick={logout}
+            className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors"
+          >
+            <LogOut className="h-4 w-4" />
+            Sign out
+          </button>
+        </div>
+      </aside>
+
+      {/* Overlay for mobile */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-30 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Main content */}
+      <main className="flex-1 p-4 md:p-8 overflow-auto">
+        <Outlet />
+      </main>
+
+      {/* Mobile bottom tabs */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-sand-dark flex no-print z-20">
+        {navItems.map((item) => {
+          const isActive =
+            item.to === '/'
+              ? location.pathname === '/'
+              : location.pathname.startsWith(item.to);
+          return (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={`flex-1 flex flex-col items-center py-2 text-xs ${
+                isActive ? 'text-ocean' : 'text-gray-500'
+              }`}
+            >
+              <item.icon className="h-5 w-5 mb-1" />
+              {item.label}
+            </NavLink>
+          );
+        })}
+      </nav>
+    </div>
+  );
+}

@@ -1,0 +1,492 @@
+import { useState } from 'react';
+import { Search, Plus, ChevronUp, ChevronDown, Trash2, Edit2, AlertTriangle, Clock } from 'lucide-react';
+import {
+  useInventory,
+  useCreateInventoryItem,
+  useUpdateInventoryItem,
+  useDeleteInventoryItem,
+} from '../hooks/useInventory';
+import type { InventoryItem, Category } from '../types';
+
+const CATEGORIES: { value: Category | ''; label: string }[] = [
+  { value: '', label: 'All' },
+  { value: 'FOOD', label: 'Food' },
+  { value: 'BEVERAGES', label: 'Beverages' },
+  { value: 'CLEANING', label: 'Cleaning' },
+  { value: 'TOILETRIES', label: 'Toiletries' },
+  { value: 'DECK_SUPPLIES', label: 'Deck Supplies' },
+  { value: 'GALLEY', label: 'Galley' },
+  { value: 'SAFETY', label: 'Safety' },
+  { value: 'OTHER', label: 'Other' },
+];
+
+const UNITS = ['pcs', 'kg', 'g', 'L', 'mL', 'bottles', 'cans', 'boxes', 'packs', 'rolls'];
+
+interface ItemFormData {
+  name: string;
+  category: Category;
+  quantity: number;
+  unit: string;
+  expiryDate: string;
+  reorderThreshold: number;
+  notes: string;
+}
+
+const emptyForm: ItemFormData = {
+  name: '',
+  category: 'FOOD',
+  quantity: 0,
+  unit: 'pcs',
+  expiryDate: '',
+  reorderThreshold: 5,
+  notes: '',
+};
+
+function ItemModal({
+  item,
+  onClose,
+}: {
+  item: InventoryItem | null;
+  onClose: () => void;
+}) {
+  const [form, setForm] = useState<ItemFormData>(
+    item
+      ? {
+          name: item.name,
+          category: item.category,
+          quantity: item.quantity,
+          unit: item.unit,
+          expiryDate: item.expiryDate ? item.expiryDate.slice(0, 10) : '',
+          reorderThreshold: item.reorderThreshold,
+          notes: item.notes ?? '',
+        }
+      : emptyForm,
+  );
+
+  const createMutation = useCreateInventoryItem();
+  const updateMutation = useUpdateInventoryItem();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const payload = {
+      ...form,
+      expiryDate: form.expiryDate || null,
+      notes: form.notes || null,
+    };
+    if (item) {
+      await updateMutation.mutateAsync({ id: item.id, ...payload });
+    } else {
+      await createMutation.mutateAsync(payload);
+    }
+    onClose();
+  };
+
+  const isPending = createMutation.isPending || updateMutation.isPending;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          <h2 className="text-lg font-bold mb-4">
+            {item ? 'Edit Item' : 'Add Item'}
+          </h2>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Name</label>
+              <input
+                required
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-ocean focus:border-transparent outline-none"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Category</label>
+                <select
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-ocean outline-none"
+                  value={form.category}
+                  onChange={(e) =>
+                    setForm({ ...form, category: e.target.value as Category })
+                  }
+                >
+                  {CATEGORIES.filter((c) => c.value).map((c) => (
+                    <option key={c.value} value={c.value}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Unit</label>
+                <select
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-ocean outline-none"
+                  value={form.unit}
+                  onChange={(e) => setForm({ ...form, unit: e.target.value })}
+                >
+                  {UNITS.map((u) => (
+                    <option key={u} value={u}>
+                      {u}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Quantity</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  required
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-ocean outline-none"
+                  value={form.quantity}
+                  onChange={(e) =>
+                    setForm({ ...form, quantity: parseFloat(e.target.value) || 0 })
+                  }
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Reorder Threshold
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-ocean outline-none"
+                  value={form.reorderThreshold}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      reorderThreshold: parseInt(e.target.value) || 0,
+                    })
+                  }
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Expiry Date
+              </label>
+              <input
+                type="date"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-ocean outline-none"
+                value={form.expiryDate}
+                onChange={(e) =>
+                  setForm({ ...form, expiryDate: e.target.value })
+                }
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Notes</label>
+              <textarea
+                rows={2}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-ocean outline-none"
+                value={form.notes}
+                onChange={(e) => setForm({ ...form, notes: e.target.value })}
+              />
+            </div>
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 text-sm rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isPending}
+                className="px-4 py-2 text-sm rounded-lg bg-ocean text-white hover:bg-ocean-light transition-colors disabled:opacity-50"
+              >
+                {isPending ? 'Saving...' : item ? 'Update' : 'Add Item'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function InventoryPage() {
+  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState<Category | ''>('');
+  const [sort, setSort] = useState('name');
+  const [order, setOrder] = useState<'asc' | 'desc'>('asc');
+  const [page, setPage] = useState(1);
+  const [modalItem, setModalItem] = useState<InventoryItem | null | 'new'>(null);
+
+  const { data, isLoading } = useInventory({
+    page,
+    pageSize: 20,
+    search,
+    category,
+    sort,
+    order,
+  });
+
+  const deleteMutation = useDeleteInventoryItem();
+
+  const toggleSort = (field: string) => {
+    if (sort === field) {
+      setOrder(order === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSort(field);
+      setOrder('asc');
+    }
+  };
+
+  const SortIcon = ({ field }: { field: string }) =>
+    sort === field ? (
+      order === 'asc' ? (
+        <ChevronUp className="h-4 w-4" />
+      ) : (
+        <ChevronDown className="h-4 w-4" />
+      )
+    ) : null;
+
+  const isExpiringSoon = (item: InventoryItem) => {
+    if (!item.expiryDate) return false;
+    const diff = new Date(item.expiryDate).getTime() - Date.now();
+    return diff > 0 && diff < 7 * 24 * 60 * 60 * 1000;
+  };
+
+  const isLowStock = (item: InventoryItem) =>
+    item.reorderThreshold > 0 && item.quantity <= item.reorderThreshold;
+
+  return (
+    <div>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+        <h1 className="text-2xl font-bold">Inventory</h1>
+        <button
+          onClick={() => setModalItem('new')}
+          className="flex items-center gap-2 bg-ocean text-white px-4 py-2 rounded-lg hover:bg-ocean-light transition-colors"
+        >
+          <Plus className="h-4 w-4" /> Add Item
+        </button>
+      </div>
+
+      {/* Search + Filter */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <input
+            placeholder="Search items..."
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean outline-none"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Category Pills */}
+      <div className="flex flex-wrap gap-2 mb-6">
+        {CATEGORIES.map((c) => (
+          <button
+            key={c.value}
+            onClick={() => {
+              setCategory(c.value);
+              setPage(1);
+            }}
+            className={`px-3 py-1 text-sm rounded-full transition-colors ${
+              category === c.value
+                ? 'bg-ocean text-white'
+                : 'bg-white text-navy border border-sand-dark hover:border-ocean'
+            }`}
+          >
+            {c.label}
+          </button>
+        ))}
+      </div>
+
+      {isLoading ? (
+        <div className="flex justify-center py-12">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-ocean" />
+        </div>
+      ) : (
+        <>
+          {/* Desktop table */}
+          <div className="hidden md:block bg-white rounded-xl shadow-sm overflow-hidden">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-sand-dark bg-sand/50 text-left text-sm text-gray-600">
+                  {[
+                    { field: 'name', label: 'Name' },
+                    { field: 'category', label: 'Category' },
+                    { field: 'quantity', label: 'Qty' },
+                    { field: 'unit', label: 'Unit' },
+                    { field: 'expiryDate', label: 'Expiry' },
+                    { field: '', label: 'Status' },
+                    { field: '', label: '' },
+                  ].map((col, i) => (
+                    <th
+                      key={i}
+                      className={`px-4 py-3 font-medium ${col.field ? 'cursor-pointer select-none' : ''}`}
+                      onClick={() => col.field && toggleSort(col.field)}
+                    >
+                      <span className="flex items-center gap-1">
+                        {col.label}
+                        {col.field && <SortIcon field={col.field} />}
+                      </span>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {data?.data.map((item) => (
+                  <tr
+                    key={item.id}
+                    className="border-b border-sand-dark/50 hover:bg-sand/30 transition-colors"
+                  >
+                    <td className="px-4 py-3 font-medium">{item.name}</td>
+                    <td className="px-4 py-3 text-sm">
+                      {CATEGORIES.find((c) => c.value === item.category)?.label}
+                    </td>
+                    <td className="px-4 py-3">{item.quantity}</td>
+                    <td className="px-4 py-3 text-sm">{item.unit}</td>
+                    <td className="px-4 py-3 text-sm">
+                      {item.expiryDate
+                        ? new Date(item.expiryDate).toLocaleDateString()
+                        : '—'}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-1">
+                        {isLowStock(item) && (
+                          <span className="flex items-center gap-1 text-xs px-2 py-0.5 bg-amber-100 text-amber rounded-full">
+                            <AlertTriangle className="h-3 w-3" /> Low
+                          </span>
+                        )}
+                        {isExpiringSoon(item) && (
+                          <span className="flex items-center gap-1 text-xs px-2 py-0.5 bg-red-100 text-coral rounded-full">
+                            <Clock className="h-3 w-3" /> Expiring
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setModalItem(item)}
+                          className="p-1 text-gray-400 hover:text-ocean transition-colors"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm('Delete this item?'))
+                              deleteMutation.mutate(item.id);
+                          }}
+                          className="p-1 text-gray-400 hover:text-coral transition-colors"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {data?.data.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-12 text-center text-gray-400">
+                      No items found.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile cards */}
+          <div className="md:hidden space-y-3">
+            {data?.data.map((item) => (
+              <div key={item.id} className="bg-white rounded-xl shadow-sm p-4">
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <p className="font-medium">{item.name}</p>
+                    <p className="text-xs text-gray-500">
+                      {CATEGORIES.find((c) => c.value === item.category)?.label}
+                    </p>
+                  </div>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => setModalItem(item)}
+                      className="p-1 text-gray-400 hover:text-ocean"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (confirm('Delete?')) deleteMutation.mutate(item.id);
+                      }}
+                      className="p-1 text-gray-400 hover:text-coral"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 text-sm text-gray-600">
+                  <span>
+                    {item.quantity} {item.unit}
+                  </span>
+                  {item.expiryDate && (
+                    <span>Exp: {new Date(item.expiryDate).toLocaleDateString()}</span>
+                  )}
+                </div>
+                <div className="flex gap-1 mt-2">
+                  {isLowStock(item) && (
+                    <span className="flex items-center gap-1 text-xs px-2 py-0.5 bg-amber-100 text-amber rounded-full">
+                      <AlertTriangle className="h-3 w-3" /> Low Stock
+                    </span>
+                  )}
+                  {isExpiringSoon(item) && (
+                    <span className="flex items-center gap-1 text-xs px-2 py-0.5 bg-red-100 text-coral rounded-full">
+                      <Clock className="h-3 w-3" /> Expiring
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+            {data?.data.length === 0 && (
+              <p className="text-center text-gray-400 py-12">No items found.</p>
+            )}
+          </div>
+
+          {/* Pagination */}
+          {data && data.totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-6">
+              <button
+                disabled={page <= 1}
+                onClick={() => setPage(page - 1)}
+                className="px-3 py-1 text-sm rounded border border-gray-300 disabled:opacity-50 hover:bg-white transition-colors"
+              >
+                Previous
+              </button>
+              <span className="text-sm text-gray-600">
+                Page {page} of {data.totalPages}
+              </span>
+              <button
+                disabled={page >= data.totalPages}
+                onClick={() => setPage(page + 1)}
+                className="px-3 py-1 text-sm rounded border border-gray-300 disabled:opacity-50 hover:bg-white transition-colors"
+              >
+                Next
+              </button>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Modal */}
+      {modalItem !== null && (
+        <ItemModal
+          item={modalItem === 'new' ? null : modalItem}
+          onClose={() => setModalItem(null)}
+        />
+      )}
+    </div>
+  );
+}
