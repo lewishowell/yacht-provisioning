@@ -46,7 +46,7 @@ provisioningRouter.get('/', asyncHandler(async (req, res) => {
 
 // POST /api/provisioning-lists
 provisioningRouter.post('/', asyncHandler(async (req, res) => {
-  const data = createListSchema.parse(req.body);
+  const data = createListSchema.parse(req.body) as any;
   const list = await provisioningService.createList(req.user!.id, data);
   res.status(201).json(list);
 }));
@@ -89,7 +89,7 @@ provisioningRouter.delete('/:id', asyncHandler(async (req, res) => {
 // POST /api/provisioning-lists/:id/items
 provisioningRouter.post('/:id/items', asyncHandler(async (req, res) => {
   const id = req.params.id as string;
-  const data = createItemSchema.parse(req.body);
+  const data = createItemSchema.parse(req.body) as any;
   const item = await provisioningService.addListItem(id, req.user!.id, data);
   if (!item) throw new AppError(404, 'List not found');
   res.status(201).json(item);

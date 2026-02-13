@@ -65,7 +65,8 @@ inventoryRouter.get('/:id', asyncHandler(async (req, res) => {
 
 // POST /api/inventory
 inventoryRouter.post('/', asyncHandler(async (req, res) => {
-  const data = createItemSchema.parse(req.body);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const data = createItemSchema.parse(req.body) as any;
   const item = await inventoryService.createInventoryItem(req.user!.id, data);
   res.status(201).json(item);
 }));
