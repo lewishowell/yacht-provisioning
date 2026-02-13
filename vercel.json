@@ -1,6 +1,6 @@
 {
   "installCommand": "npm install",
-  "buildCommand": "npm run build -w client && mv client/dist dist",
+  "buildCommand": "npm run build -w client",
   "outputDirectory": "dist",
   "framework": null,
   "rewrites": [
