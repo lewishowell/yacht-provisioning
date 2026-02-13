@@ -25,7 +25,7 @@ export async function getInventoryItems(filters: InventoryFilters) {
   const where: Prisma.InventoryItemWhereInput = { userId };
 
   if (search) {
-    where.name = { contains: search };
+    where.name = { contains: search, mode: 'insensitive' };
   }
   if (category) {
     where.category = category;

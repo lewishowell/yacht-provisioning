@@ -29,7 +29,7 @@ export function LoginPage() {
         </div>
 
         <a
-          href="http://localhost:3001/api/auth/google"
+          href="/api/auth/google"
           className="flex items-center justify-center gap-3 w-full bg-ocean hover:bg-ocean-light text-white font-medium py-3 px-6 rounded-lg transition-colors"
         >
           <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">

@@ -7,7 +7,6 @@ import {
   Printer,
   Check,
   Trash2,
-  Edit2,
 } from 'lucide-react';
 import {
   useProvisioningList,
@@ -45,7 +44,7 @@ export function ListDetailPage() {
   const addItem = useAddListItem();
   const deleteItem = useDeleteListItem();
   const purchaseItem = usePurchaseItem();
-  const updateItem = useUpdateListItem();
+  const _updateItem = useUpdateListItem();
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [newItem, setNewItem] = useState({
