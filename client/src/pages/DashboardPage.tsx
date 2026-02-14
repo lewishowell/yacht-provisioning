@@ -19,14 +19,16 @@ function StatCard({
   label,
   value,
   color,
+  to,
 }: {
   icon: React.ElementType;
   label: string;
   value: number;
   color: string;
+  to?: string;
 }) {
-  return (
-    <div className="bg-white rounded-xl shadow-sm p-6 flex items-center gap-4">
+  const content = (
+    <>
       <div className={`${color} rounded-lg p-3`}>
         <Icon className="h-6 w-6 text-white" />
       </div>
@@ -34,6 +36,20 @@ function StatCard({
         <p className="text-2xl font-bold">{value}</p>
         <p className="text-sm text-gray-500">{label}</p>
       </div>
+    </>
+  );
+
+  if (to) {
+    return (
+      <Link to={to} className="bg-white rounded-xl shadow-sm p-6 flex items-center gap-4 hover:shadow-md transition-shadow">
+        {content}
+      </Link>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm p-6 flex items-center gap-4">
+      {content}
     </div>
   );
 }
@@ -71,10 +87,10 @@ export function DashboardPage() {
       <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatCard icon={Package} label="Total Items" value={s.totalItems} color="bg-ocean" />
-        <StatCard icon={AlertTriangle} label="Low Stock" value={s.lowStockCount} color="bg-amber" />
-        <StatCard icon={ClipboardList} label="Active Lists" value={s.activeLists} color="bg-teal" />
-        <StatCard icon={ShoppingCart} label="Pending Purchases" value={s.pendingPurchases} color="bg-navy" />
+        <StatCard icon={Package} label="Total Items" value={s.totalItems} color="bg-ocean" to="/inventory" />
+        <StatCard icon={AlertTriangle} label="Low Stock" value={s.lowStockCount} color="bg-amber" to="/inventory" />
+        <StatCard icon={ClipboardList} label="Active Lists" value={s.activeLists} color="bg-teal" to="/provisioning" />
+        <StatCard icon={ShoppingCart} label="Pending Purchases" value={s.pendingPurchases} color="bg-navy" to="/provisioning" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

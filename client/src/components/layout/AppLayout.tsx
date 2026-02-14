@@ -1,4 +1,4 @@
-import { Outlet, NavLink, useLocation } from 'react-router-dom';
+import { Outlet, NavLink, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import {
   LayoutDashboard,
@@ -26,10 +26,10 @@ export function AppLayout() {
     <div className="min-h-screen flex flex-col md:flex-row">
       {/* Mobile header */}
       <header className="md:hidden flex items-center justify-between bg-navy text-white p-4 no-print">
-        <div className="flex items-center gap-2">
+        <Link to="/" className="flex items-center gap-2">
           <Anchor className="h-6 w-6 text-teal-light" />
           <span className="font-bold text-lg">YachtProv</span>
-        </div>
+        </Link>
         <button onClick={() => setSidebarOpen(!sidebarOpen)}>
           {sidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </button>
@@ -41,10 +41,10 @@ export function AppLayout() {
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         } md:translate-x-0 fixed md:sticky top-0 h-screen z-40`}
       >
-        <div className="hidden md:flex items-center gap-3 p-6 border-b border-navy-light">
+        <Link to="/" className="hidden md:flex items-center gap-3 p-6 border-b border-navy-light">
           <Anchor className="h-8 w-8 text-teal-light" />
           <span className="font-bold text-xl">YachtProv</span>
-        </div>
+        </Link>
 
         <nav className="flex-1 p-4 space-y-1">
           {navItems.map((item) => (

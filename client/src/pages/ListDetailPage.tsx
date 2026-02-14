@@ -7,11 +7,15 @@ import {
   Printer,
   Check,
   Trash2,
+  Pencil,
+  Save,
+  X,
 } from 'lucide-react';
 import {
   useProvisioningList,
   useUpdateList,
   useAddListItem,
+  useUpdateListItem,
   useDeleteListItem,
   usePurchaseItem,
 } from '../hooks/useProvisioningLists';
@@ -41,10 +45,13 @@ export function ListDetailPage() {
   const { data: list, isLoading } = useProvisioningList(id!);
   const updateList = useUpdateList();
   const addItem = useAddListItem();
+  const updateItem = useUpdateListItem();
   const deleteItem = useDeleteListItem();
   const purchaseItem = usePurchaseItem();
 
   const [showAddForm, setShowAddForm] = useState(false);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({ name: '', category: 'FOOD' as Category, quantity: 1, unit: '' });
   const [newItem, setNewItem] = useState({
     name: '',
     category: 'FOOD' as Category,
@@ -77,6 +84,17 @@ export function ListDetailPage() {
     a.download = `${list.name.replace(/\s+/g, '_')}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const startEdit = (item: { id: string; name: string; category: Category; quantity: number; unit: string }) => {
+    setEditingItemId(item.id);
+    setEditForm({ name: item.name, category: item.category, quantity: item.quantity, unit: item.unit });
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingItemId) return;
+    await updateItem.mutateAsync({ listId: id!, itemId: editingItemId, ...editForm });
+    setEditingItemId(null);
   };
 
   if (isLoading) {
@@ -264,56 +282,121 @@ export function ListDetailPage() {
               </tr>
             </thead>
             <tbody>
-              {items.map((item) => (
-                <tr
-                  key={item.id}
-                  className={`border-b border-sand-dark/50 transition-colors ${
-                    item.purchased ? 'bg-green-50/50' : 'hover:bg-sand/30'
-                  }`}
-                >
-                  <td className="px-4 py-3">
-                    <button
-                      onClick={() => {
-                        if (!item.purchased) {
-                          purchaseItem.mutate({ listId: id!, itemId: item.id });
-                        }
-                      }}
-                      disabled={item.purchased}
-                      className={`h-5 w-5 rounded border-2 flex items-center justify-center transition-colors ${
-                        item.purchased
-                          ? 'bg-teal border-teal text-white'
-                          : 'border-gray-300 hover:border-teal'
-                      }`}
-                    >
-                      {item.purchased && <Check className="h-3 w-3" />}
-                    </button>
-                  </td>
-                  <td
-                    className={`px-4 py-3 font-medium ${
-                      item.purchased ? 'line-through text-gray-400' : ''
+              {items.map((item) =>
+                editingItemId === item.id ? (
+                  <tr key={item.id} className="border-b border-sand-dark/50 bg-blue-50/30">
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2">
+                      <input
+                        className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-ocean outline-none"
+                        value={editForm.name}
+                        onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                      />
+                    </td>
+                    <td className="px-4 py-2 hidden sm:table-cell">
+                      <select
+                        className="border border-gray-300 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-ocean outline-none"
+                        value={editForm.category}
+                        onChange={(e) => setEditForm({ ...editForm, category: e.target.value as Category })}
+                      >
+                        {CATEGORIES.map((c) => (
+                          <option key={c.value} value={c.value}>{c.label}</option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="px-4 py-2">
+                      <input
+                        type="number"
+                        min="1"
+                        className="w-16 border border-gray-300 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-ocean outline-none"
+                        value={editForm.quantity}
+                        onChange={(e) => setEditForm({ ...editForm, quantity: parseInt(e.target.value) || 1 })}
+                      />
+                    </td>
+                    <td className="px-4 py-2 hidden sm:table-cell">
+                      <input
+                        className="w-20 border border-gray-300 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-ocean outline-none"
+                        value={editForm.unit}
+                        onChange={(e) => setEditForm({ ...editForm, unit: e.target.value })}
+                      />
+                    </td>
+                    <td className="px-4 py-2 no-print">
+                      <div className="flex gap-1">
+                        <button
+                          onClick={handleSaveEdit}
+                          disabled={updateItem.isPending}
+                          className="p-1 text-teal hover:text-teal-light transition-colors disabled:opacity-50"
+                        >
+                          <Save className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => setEditingItemId(null)}
+                          className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  <tr
+                    key={item.id}
+                    className={`border-b border-sand-dark/50 transition-colors ${
+                      item.purchased ? 'bg-green-50/50' : 'hover:bg-sand/30'
                     }`}
                   >
-                    {item.name}
-                  </td>
-                  <td className="px-4 py-3 text-sm hidden sm:table-cell">
-                    {CATEGORIES.find((c) => c.value === item.category)?.label}
-                  </td>
-                  <td className="px-4 py-3">{item.quantity}</td>
-                  <td className="px-4 py-3 text-sm hidden sm:table-cell">{item.unit}</td>
-                  <td className="px-4 py-3 no-print">
-                    <div className="flex gap-1">
+                    <td className="px-4 py-3">
                       <button
-                        onClick={() =>
-                          deleteItem.mutate({ listId: id!, itemId: item.id })
-                        }
-                        className="p-1 text-gray-400 hover:text-coral transition-colors"
+                        onClick={() => {
+                          if (!item.purchased) {
+                            purchaseItem.mutate({ listId: id!, itemId: item.id });
+                          }
+                        }}
+                        disabled={item.purchased}
+                        className={`h-5 w-5 rounded border-2 flex items-center justify-center transition-colors ${
+                          item.purchased
+                            ? 'bg-teal border-teal text-white'
+                            : 'border-gray-300 hover:border-teal'
+                        }`}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        {item.purchased && <Check className="h-3 w-3" />}
                       </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td
+                      className={`px-4 py-3 font-medium ${
+                        item.purchased ? 'line-through text-gray-400' : ''
+                      }`}
+                    >
+                      {item.name}
+                    </td>
+                    <td className="px-4 py-3 text-sm hidden sm:table-cell">
+                      {CATEGORIES.find((c) => c.value === item.category)?.label}
+                    </td>
+                    <td className="px-4 py-3">{item.quantity}</td>
+                    <td className="px-4 py-3 text-sm hidden sm:table-cell">{item.unit}</td>
+                    <td className="px-4 py-3 no-print">
+                      <div className="flex gap-1">
+                        {!item.purchased && (
+                          <button
+                            onClick={() => startEdit(item)}
+                            className="p-1 text-gray-400 hover:text-ocean transition-colors"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                        )}
+                        <button
+                          onClick={() =>
+                            deleteItem.mutate({ listId: id!, itemId: item.id })
+                          }
+                          className="p-1 text-gray-400 hover:text-coral transition-colors"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              )}
             </tbody>
           </table>
         )}
