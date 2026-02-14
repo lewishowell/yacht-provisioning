@@ -101,13 +101,14 @@ function ItemModal({
   const isPending = createMutation.isPending || updateMutation.isPending;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          <h2 className="text-lg font-bold mb-4">
-            {item ? 'Edit Item' : 'Add Item'}
-          </h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="fixed inset-0 bg-black/50 z-50 overflow-y-auto overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
+      <div className="min-h-full flex items-start sm:items-center justify-center p-4 py-8">
+        <div className="bg-white rounded-xl shadow-xl w-full max-w-lg">
+          <div className="p-6">
+            <h2 className="text-lg font-bold mb-4">
+              {item ? 'Edit Item' : 'Add Item'}
+            </h2>
+            <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-1">Name</label>
               <input
@@ -222,7 +223,8 @@ function ItemModal({
                 {isPending ? 'Saving...' : item ? 'Update' : 'Add Item'}
               </button>
             </div>
-          </form>
+            </form>
+          </div>
         </div>
       </div>
     </div>
