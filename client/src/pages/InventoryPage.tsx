@@ -71,8 +71,8 @@ function ItemModal({
       ? {
           name: item.name,
           category: item.category,
-          quantity: String(item.quantity),
-          targetQuantity: String(item.targetQuantity),
+          quantity: item.quantity ? String(item.quantity) : '',
+          targetQuantity: item.targetQuantity ? String(item.targetQuantity) : '',
           unit: item.unit,
           expiryDate: item.expiryDate ? item.expiryDate.slice(0, 10) : '',
           notes: item.notes ?? '',
@@ -163,9 +163,9 @@ function ItemModal({
                   step="0.1"
                   required
                   inputMode="decimal"
+                  placeholder="0"
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-ocean outline-none"
                   value={form.quantity}
-                  onFocus={(e) => e.target.select()}
                   onChange={(e) =>
                     setForm({ ...form, quantity: e.target.value })
                   }
@@ -180,9 +180,9 @@ function ItemModal({
                   min="0"
                   step="0.1"
                   inputMode="decimal"
+                  placeholder="0"
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-ocean outline-none"
                   value={form.targetQuantity}
-                  onFocus={(e) => e.target.select()}
                   onChange={(e) =>
                     setForm({
                       ...form,
