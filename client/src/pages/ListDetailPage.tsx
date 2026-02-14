@@ -234,6 +234,7 @@ export function ListDetailPage() {
                 required
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-ocean outline-none"
                 value={newItem.quantity}
+                onFocus={(e) => e.target.select()}
                 onChange={(e) =>
                   setNewItem({ ...newItem, quantity: parseInt(e.target.value) || 1 })
                 }
