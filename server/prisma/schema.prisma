@@ -64,6 +64,7 @@ model ProvisioningListItem {
   category    String
   quantity    Float     @default(1)
   unit        String
+  itemType    String    @default("trip")
   purchased   Boolean   @default(false)
   purchasedAt DateTime?
   createdAt   DateTime  @default(now())

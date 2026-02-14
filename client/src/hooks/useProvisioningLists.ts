@@ -112,6 +112,20 @@ export function useDeleteListItem() {
   });
 }
 
+export function useAddRestockItems() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (listId: string) =>
+      api
+        .post(`/provisioning-lists/${listId}/add-restock-items`)
+        .then((r) => r.data),
+    onSuccess: (_d, listId) => {
+      qc.invalidateQueries({ queryKey: ['provisioning-lists', listId] });
+      qc.invalidateQueries({ queryKey: ['provisioning-lists'] });
+    },
+  });
+}
+
 export function usePurchaseItem() {
   const qc = useQueryClient();
   return useMutation({

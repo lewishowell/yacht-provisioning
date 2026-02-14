@@ -10,6 +10,7 @@ import {
   Pencil,
   Save,
   X,
+  PackagePlus,
 } from 'lucide-react';
 import {
   useProvisioningList,
@@ -18,8 +19,9 @@ import {
   useUpdateListItem,
   useDeleteListItem,
   usePurchaseItem,
+  useAddRestockItems,
 } from '../hooks/useProvisioningLists';
-import type { Category, ListStatus } from '../types';
+import type { Category, ListStatus, ProvisioningListItem } from '../types';
 
 const UNITS = ['pcs', 'kg', 'g', 'L', 'mL', 'bottles', 'cans', 'boxes', 'packs', 'rolls'];
 
@@ -50,6 +52,7 @@ export function ListDetailPage() {
   const updateItem = useUpdateListItem();
   const deleteItem = useDeleteListItem();
   const purchaseItem = usePurchaseItem();
+  const addRestockItems = useAddRestockItems();
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
@@ -63,19 +66,24 @@ export function ListDetailPage() {
 
   const handleAddItem = async (e: React.FormEvent) => {
     e.preventDefault();
-    await addItem.mutateAsync({ listId: id!, ...newItem });
+    await addItem.mutateAsync({ listId: id!, ...newItem, itemType: 'trip' });
     setNewItem({ name: '', category: 'FOOD', quantity: 1, unit: 'pcs' });
     setShowAddForm(false);
   };
 
+  const handleAddRestockItems = async () => {
+    await addRestockItems.mutateAsync(id!);
+  };
+
   const handleExportCSV = () => {
     if (!list?.items) return;
-    const headers = ['Name', 'Category', 'Quantity', 'Unit', 'Purchased'];
+    const headers = ['Name', 'Category', 'Quantity', 'Unit', 'Type', 'Purchased'];
     const rows = list.items.map((item) => [
       item.name,
       item.category,
       String(item.quantity),
       item.unit,
+      item.itemType === 'restock' ? 'Restock' : 'Trip',
       item.purchased ? 'Yes' : 'No',
     ]);
     const csv = [headers, ...rows].map((r) => r.join(',')).join('\n');
@@ -121,6 +129,8 @@ export function ListDetailPage() {
   const items = list.items ?? [];
   const purchased = items.filter((i) => i.purchased).length;
   const progress = items.length > 0 ? Math.round((purchased / items.length) * 100) : 0;
+  const restockItems = items.filter((i) => i.itemType === 'restock');
+  const tripItems = items.filter((i) => i.itemType !== 'restock');
 
   return (
     <div>
@@ -164,11 +174,11 @@ export function ListDetailPage() {
 
       {/* Progress + Actions */}
       <div className="bg-white rounded-xl shadow-sm p-5 mb-6">
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3">
           <div className="text-sm text-gray-600">
             {purchased} of {items.length} items purchased ({progress}%)
           </div>
-          <div className="flex gap-2 no-print">
+          <div className="flex flex-wrap gap-2 no-print">
             <button
               onClick={() => window.print()}
               className="flex items-center gap-1 text-sm px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
@@ -182,13 +192,31 @@ export function ListDetailPage() {
               <Download className="h-4 w-4" /> CSV
             </button>
             <button
+              onClick={handleAddRestockItems}
+              disabled={addRestockItems.isPending}
+              className="flex items-center gap-1 text-sm px-3 py-1.5 rounded-lg bg-amber text-white hover:bg-amber-600 transition-colors disabled:opacity-50"
+            >
+              <PackagePlus className="h-4 w-4" />
+              {addRestockItems.isPending ? 'Adding...' : 'Add Restock Items'}
+            </button>
+            <button
               onClick={() => setShowAddForm(true)}
               className="flex items-center gap-1 text-sm px-3 py-1.5 rounded-lg bg-ocean text-white hover:bg-ocean-light transition-colors"
             >
-              <Plus className="h-4 w-4" /> Add Item
+              <Plus className="h-4 w-4" /> Add Trip Item
             </button>
           </div>
         </div>
+        {addRestockItems.isSuccess && addRestockItems.data?.added === 0 && (
+          <div className="text-sm text-gray-500 mb-3">
+            All restock items are already on this list (or inventory is fully stocked).
+          </div>
+        )}
+        {addRestockItems.isSuccess && (addRestockItems.data?.added ?? 0) > 0 && (
+          <div className="text-sm text-teal mb-3">
+            Added {addRestockItems.data?.added} restock item{addRestockItems.data?.added === 1 ? '' : 's'} from inventory shortfalls.
+          </div>
+        )}
         <div className="w-full bg-sand-dark rounded-full h-3">
           <div
             className="bg-teal rounded-full h-3 transition-all"
@@ -274,150 +302,197 @@ export function ListDetailPage() {
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
         {items.length === 0 ? (
           <div className="p-12 text-center text-gray-400">
-            No items yet. Add some items to get started.
+            No items yet. Add trip items or restock items from your inventory.
           </div>
         ) : (
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-sand-dark bg-sand/50 text-left text-sm text-gray-600">
-                <th className="px-4 py-3 w-10"></th>
-                <th className="px-4 py-3 font-medium">Name</th>
-                <th className="px-4 py-3 font-medium hidden sm:table-cell">Category</th>
-                <th className="px-4 py-3 font-medium">Qty</th>
-                <th className="px-4 py-3 font-medium hidden sm:table-cell">Unit</th>
-                <th className="px-4 py-3 font-medium no-print"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((item) =>
-                editingItemId === item.id ? (
-                  <tr key={item.id} className="border-b border-sand-dark/50 bg-blue-50/30">
-                    <td colSpan={6} className="px-4 py-3">
-                      <div className="flex flex-wrap gap-2 items-end">
-                        <div className="flex-1 min-w-[120px]">
-                          <label className="block text-xs font-medium mb-1">Name</label>
-                          <input
-                            className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-ocean outline-none"
-                            value={editForm.name}
-                            onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                          />
-                        </div>
-                        <div className="min-w-[100px]">
-                          <label className="block text-xs font-medium mb-1">Category</label>
-                          <select
-                            className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-ocean outline-none"
-                            value={editForm.category}
-                            onChange={(e) => setEditForm({ ...editForm, category: e.target.value as Category })}
-                          >
-                            {CATEGORIES.map((c) => (
-                              <option key={c.value} value={c.value}>{c.label}</option>
-                            ))}
-                          </select>
-                        </div>
-                        <div className="w-16">
-                          <label className="block text-xs font-medium mb-1">Qty</label>
-                          <input
-                            type="number"
-                            min="1"
-                            className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-ocean outline-none"
-                            value={editForm.quantity}
-                            onFocus={(e) => e.target.select()}
-                            onChange={(e) => setEditForm({ ...editForm, quantity: parseInt(e.target.value) || 1 })}
-                          />
-                        </div>
-                        <div className="w-20">
-                          <label className="block text-xs font-medium mb-1">Unit</label>
-                          <select
-                            className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-ocean outline-none"
-                            value={editForm.unit}
-                            onChange={(e) => setEditForm({ ...editForm, unit: e.target.value })}
-                          >
-                            {UNITS.map((u) => (
-                              <option key={u} value={u}>{u}</option>
-                            ))}
-                          </select>
-                        </div>
-                        <div className="flex gap-1">
-                          <button
-                            onClick={handleSaveEdit}
-                            disabled={updateItem.isPending}
-                            className="p-1.5 text-white bg-teal rounded hover:bg-teal-light transition-colors disabled:opacity-50"
-                          >
-                            <Save className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => setEditingItemId(null)}
-                            className="p-1.5 text-gray-500 bg-gray-100 rounded hover:bg-gray-200 transition-colors"
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  <tr
-                    key={item.id}
-                    className={`border-b border-sand-dark/50 transition-colors ${
-                      item.purchased ? 'bg-green-50/50' : 'hover:bg-sand/30'
-                    }`}
-                  >
-                    <td className="px-4 py-3">
-                      <button
-                        onClick={() => {
-                          if (!item.purchased) {
-                            purchaseItem.mutate({ listId: id!, itemId: item.id });
-                          }
-                        }}
-                        disabled={item.purchased}
-                        className={`h-5 w-5 rounded border-2 flex items-center justify-center transition-colors ${
-                          item.purchased
-                            ? 'bg-teal border-teal text-white'
-                            : 'border-gray-300 hover:border-teal'
-                        }`}
-                      >
-                        {item.purchased && <Check className="h-3 w-3" />}
-                      </button>
-                    </td>
-                    <td
-                      className={`px-4 py-3 font-medium ${
-                        item.purchased ? 'line-through text-gray-400' : ''
-                      }`}
-                    >
-                      {item.name}
-                    </td>
-                    <td className="px-4 py-3 text-sm hidden sm:table-cell">
-                      {CATEGORIES.find((c) => c.value === item.category)?.label}
-                    </td>
-                    <td className="px-4 py-3">{item.quantity}</td>
-                    <td className="px-4 py-3 text-sm hidden sm:table-cell">{item.unit}</td>
-                    <td className="px-4 py-3 no-print">
-                      <div className="flex gap-1">
-                        {!item.purchased && (
-                          <button
-                            onClick={() => startEdit(item)}
-                            className="p-1 text-gray-400 hover:text-ocean transition-colors"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </button>
-                        )}
-                        <button
-                          onClick={() =>
-                            deleteItem.mutate({ listId: id!, itemId: item.id })
-                          }
-                          className="p-1 text-gray-400 hover:text-coral transition-colors"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                )
-              )}
-            </tbody>
-          </table>
+          <>
+            {/* Restock section */}
+            {restockItems.length > 0 && (
+              <>
+                <div className="px-4 py-2 bg-amber-50 border-b border-amber-100">
+                  <span className="text-xs font-semibold text-amber-700 uppercase tracking-wide">
+                    Restock ({restockItems.length})
+                  </span>
+                </div>
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-sand-dark bg-sand/50 text-left text-sm text-gray-600">
+                      <th className="px-4 py-3 w-10"></th>
+                      <th className="px-4 py-3 font-medium">Name</th>
+                      <th className="px-4 py-3 font-medium hidden sm:table-cell">Category</th>
+                      <th className="px-4 py-3 font-medium">Qty</th>
+                      <th className="px-4 py-3 font-medium hidden sm:table-cell">Unit</th>
+                      <th className="px-4 py-3 font-medium no-print"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {restockItems.map((item) => renderItemRow(item))}
+                  </tbody>
+                </table>
+              </>
+            )}
+
+            {/* Trip section */}
+            {tripItems.length > 0 && (
+              <>
+                <div className="px-4 py-2 bg-ocean/5 border-b border-ocean/10">
+                  <span className="text-xs font-semibold text-ocean uppercase tracking-wide">
+                    Trip Items ({tripItems.length})
+                  </span>
+                </div>
+                <table className="w-full">
+                  {restockItems.length === 0 && (
+                    <thead>
+                      <tr className="border-b border-sand-dark bg-sand/50 text-left text-sm text-gray-600">
+                        <th className="px-4 py-3 w-10"></th>
+                        <th className="px-4 py-3 font-medium">Name</th>
+                        <th className="px-4 py-3 font-medium hidden sm:table-cell">Category</th>
+                        <th className="px-4 py-3 font-medium">Qty</th>
+                        <th className="px-4 py-3 font-medium hidden sm:table-cell">Unit</th>
+                        <th className="px-4 py-3 font-medium no-print"></th>
+                      </tr>
+                    </thead>
+                  )}
+                  <tbody>
+                    {tripItems.map((item) => renderItemRow(item))}
+                  </tbody>
+                </table>
+              </>
+            )}
+          </>
         )}
       </div>
     </div>
   );
+
+  function renderItemRow(item: ProvisioningListItem) {
+
+    if (editingItemId === item.id) {
+      return (
+        <tr key={item.id} className="border-b border-sand-dark/50 bg-blue-50/30">
+          <td colSpan={6} className="px-4 py-3">
+            <div className="flex flex-wrap gap-2 items-end">
+              <div className="flex-1 min-w-[120px]">
+                <label className="block text-xs font-medium mb-1">Name</label>
+                <input
+                  className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-ocean outline-none"
+                  value={editForm.name}
+                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                />
+              </div>
+              <div className="min-w-[100px]">
+                <label className="block text-xs font-medium mb-1">Category</label>
+                <select
+                  className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-ocean outline-none"
+                  value={editForm.category}
+                  onChange={(e) => setEditForm({ ...editForm, category: e.target.value as Category })}
+                >
+                  {CATEGORIES.map((c) => (
+                    <option key={c.value} value={c.value}>{c.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="w-16">
+                <label className="block text-xs font-medium mb-1">Qty</label>
+                <input
+                  type="number"
+                  min="1"
+                  className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-ocean outline-none"
+                  value={editForm.quantity}
+                  onFocus={(e) => e.target.select()}
+                  onChange={(e) => setEditForm({ ...editForm, quantity: parseInt(e.target.value) || 1 })}
+                />
+              </div>
+              <div className="w-20">
+                <label className="block text-xs font-medium mb-1">Unit</label>
+                <select
+                  className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-ocean outline-none"
+                  value={editForm.unit}
+                  onChange={(e) => setEditForm({ ...editForm, unit: e.target.value })}
+                >
+                  {UNITS.map((u) => (
+                    <option key={u} value={u}>{u}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex gap-1">
+                <button
+                  onClick={handleSaveEdit}
+                  disabled={updateItem.isPending}
+                  className="p-1.5 text-white bg-teal rounded hover:bg-teal-light transition-colors disabled:opacity-50"
+                >
+                  <Save className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => setEditingItemId(null)}
+                  className="p-1.5 text-gray-500 bg-gray-100 rounded hover:bg-gray-200 transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          </td>
+        </tr>
+      );
+    }
+
+    return (
+      <tr
+        key={item.id}
+        className={`border-b border-sand-dark/50 transition-colors ${
+          item.purchased ? 'bg-green-50/50' : 'hover:bg-sand/30'
+        }`}
+      >
+        <td className="px-4 py-3">
+          <button
+            onClick={() => {
+              if (!item.purchased) {
+                purchaseItem.mutate({ listId: id!, itemId: item.id });
+              }
+            }}
+            disabled={item.purchased}
+            className={`h-5 w-5 rounded border-2 flex items-center justify-center transition-colors ${
+              item.purchased
+                ? 'bg-teal border-teal text-white'
+                : 'border-gray-300 hover:border-teal'
+            }`}
+          >
+            {item.purchased && <Check className="h-3 w-3" />}
+          </button>
+        </td>
+        <td
+          className={`px-4 py-3 font-medium ${
+            item.purchased ? 'line-through text-gray-400' : ''
+          }`}
+        >
+          {item.name}
+        </td>
+        <td className="px-4 py-3 text-sm hidden sm:table-cell">
+          {CATEGORIES.find((c) => c.value === item.category)?.label}
+        </td>
+        <td className="px-4 py-3">{item.quantity}</td>
+        <td className="px-4 py-3 text-sm hidden sm:table-cell">{item.unit}</td>
+        <td className="px-4 py-3 no-print">
+          <div className="flex gap-1">
+            {!item.purchased && (
+              <button
+                onClick={() => startEdit(item)}
+                className="p-1 text-gray-400 hover:text-ocean transition-colors"
+              >
+                <Pencil className="h-4 w-4" />
+              </button>
+            )}
+            <button
+              onClick={() =>
+                deleteItem.mutate({ listId: id!, itemId: item.id })
+              }
+              className="p-1 text-gray-400 hover:text-coral transition-colors"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
+        </td>
+      </tr>
+    );
+  }
 }

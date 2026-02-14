@@ -44,6 +44,8 @@ export interface ProvisioningList {
   _count?: { items: number };
 }
 
+export type ItemType = 'restock' | 'trip';
+
 export interface ProvisioningListItem {
   id: string;
   listId: string;
@@ -51,6 +53,7 @@ export interface ProvisioningListItem {
   category: Category;
   quantity: number;
   unit: string;
+  itemType: ItemType;
   purchased: boolean;
   purchasedAt: string | null;
   createdAt: string;
