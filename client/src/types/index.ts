@@ -23,6 +23,7 @@ export interface InventoryItem {
   name: string;
   category: Category;
   quantity: number;
+  targetQuantity: number;
   unit: string;
   expiryDate: string | null;
   reorderThreshold: number;

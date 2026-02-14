@@ -65,3 +65,15 @@ export function useDeleteInventoryItem() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['inventory'] }),
   });
 }
+
+export function useGenerateShoppingList() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (name: string | undefined = undefined) =>
+      api.post('/inventory/generate-shopping-list', { name }).then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['provisioning-lists'] });
+      qc.invalidateQueries({ queryKey: ['dashboard-stats'] });
+    },
+  });
+}

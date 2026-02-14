@@ -31,7 +31,7 @@ export async function getInventoryItems(filters: InventoryFilters) {
     where.category = category;
   }
 
-  const allowedSortFields = ['name', 'category', 'quantity', 'unit', 'expiryDate', 'createdAt'];
+  const allowedSortFields = ['name', 'category', 'quantity', 'targetQuantity', 'unit', 'expiryDate', 'createdAt'];
   const sortField = allowedSortFields.includes(sort) ? sort : 'name';
 
   const [data, total] = await Promise.all([
@@ -54,12 +54,11 @@ export async function getInventoryItems(filters: InventoryFilters) {
 }
 
 export async function getLowStockItems(userId: string) {
-  // SQLite doesn't support column-to-column comparison in Prisma,
-  // so we fetch candidates and filter in JS
+  // Items that are below their target quantity (envelope shortfall)
   const items = await prisma.inventoryItem.findMany({
-    where: { userId, reorderThreshold: { gt: 0 } },
+    where: { userId, targetQuantity: { gt: 0 } },
   });
-  return items.filter((i) => i.quantity <= i.reorderThreshold);
+  return items.filter((i) => i.quantity < i.targetQuantity);
 }
 
 export async function getDashboardStats(userId: string) {
@@ -122,6 +121,7 @@ export async function createInventoryItem(
     name: string;
     category: string;
     quantity: number;
+    targetQuantity?: number;
     unit: string;
     expiryDate?: string | null;
     reorderThreshold?: number;
@@ -134,6 +134,7 @@ export async function createInventoryItem(
       name: data.name,
       category: data.category,
       quantity: data.quantity,
+      targetQuantity: data.targetQuantity ?? 0,
       unit: data.unit,
       expiryDate: data.expiryDate ? new Date(data.expiryDate) : null,
       reorderThreshold: data.reorderThreshold ?? 0,
@@ -149,6 +150,7 @@ export async function updateInventoryItem(
     name?: string;
     category?: string;
     quantity?: number;
+    targetQuantity?: number;
     unit?: string;
     expiryDate?: string | null;
     reorderThreshold?: number;
@@ -174,4 +176,39 @@ export async function deleteInventoryItem(id: string, userId: string) {
   if (!item) return false;
   await prisma.inventoryItem.delete({ where: { id } });
   return true;
+}
+
+/**
+ * Generate a provisioning (shopping) list from all inventory shortfalls.
+ * For each item where quantity < targetQuantity, the needed amount is added
+ * as a provisioning list item.
+ */
+export async function generateShoppingList(userId: string, name?: string) {
+  // Find all items with a shortfall
+  const items = await prisma.inventoryItem.findMany({
+    where: { userId, targetQuantity: { gt: 0 } },
+  });
+  const shortfalls = items.filter((i) => i.quantity < i.targetQuantity);
+
+  if (shortfalls.length === 0) return null;
+
+  const listName = name || `Restock — ${new Date().toLocaleDateString()}`;
+
+  return prisma.provisioningList.create({
+    data: {
+      userId,
+      name: listName,
+      description: `Auto-generated from ${shortfalls.length} item${shortfalls.length === 1 ? '' : 's'} below target`,
+      status: 'DRAFT',
+      items: {
+        create: shortfalls.map((item) => ({
+          name: item.name,
+          category: item.category,
+          quantity: Math.round((item.targetQuantity - item.quantity) * 100) / 100,
+          unit: item.unit,
+        })),
+      },
+    },
+    include: { items: true },
+  });
 }
