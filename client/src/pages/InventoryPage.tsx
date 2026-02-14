@@ -28,8 +28,8 @@ const UNITS = ['pcs', 'kg', 'g', 'L', 'mL', 'bottles', 'cans', 'boxes', 'packs',
 interface ItemFormData {
   name: string;
   category: Category;
-  quantity: number;
-  targetQuantity: number;
+  quantity: string;
+  targetQuantity: string;
   unit: string;
   expiryDate: string;
   notes: string;
@@ -38,8 +38,8 @@ interface ItemFormData {
 const emptyForm: ItemFormData = {
   name: '',
   category: 'FOOD',
-  quantity: 0,
-  targetQuantity: 0,
+  quantity: '',
+  targetQuantity: '',
   unit: 'pcs',
   expiryDate: '',
   notes: '',
@@ -71,8 +71,8 @@ function ItemModal({
       ? {
           name: item.name,
           category: item.category,
-          quantity: item.quantity,
-          targetQuantity: item.targetQuantity,
+          quantity: String(item.quantity),
+          targetQuantity: String(item.targetQuantity),
           unit: item.unit,
           expiryDate: item.expiryDate ? item.expiryDate.slice(0, 10) : '',
           notes: item.notes ?? '',
@@ -86,7 +86,11 @@ function ItemModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const payload = {
-      ...form,
+      name: form.name,
+      category: form.category,
+      quantity: parseFloat(form.quantity) || 0,
+      targetQuantity: parseFloat(form.targetQuantity) || 0,
+      unit: form.unit,
       expiryDate: form.expiryDate || null,
       notes: form.notes || null,
     };
@@ -158,10 +162,12 @@ function ItemModal({
                   min="0"
                   step="0.1"
                   required
+                  inputMode="decimal"
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-ocean outline-none"
                   value={form.quantity}
+                  onFocus={(e) => e.target.select()}
                   onChange={(e) =>
-                    setForm({ ...form, quantity: parseFloat(e.target.value) || 0 })
+                    setForm({ ...form, quantity: e.target.value })
                   }
                 />
               </div>
@@ -173,12 +179,14 @@ function ItemModal({
                   type="number"
                   min="0"
                   step="0.1"
+                  inputMode="decimal"
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-ocean outline-none"
                   value={form.targetQuantity}
+                  onFocus={(e) => e.target.select()}
                   onChange={(e) =>
                     setForm({
                       ...form,
-                      targetQuantity: parseFloat(e.target.value) || 0,
+                      targetQuantity: e.target.value,
                     })
                   }
                 />
