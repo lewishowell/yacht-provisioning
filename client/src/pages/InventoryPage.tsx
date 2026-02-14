@@ -1,12 +1,13 @@
 import { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { Search, Plus, ChevronUp, ChevronDown, Trash2, Edit2, AlertTriangle, Clock, X } from 'lucide-react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { Search, Plus, ChevronUp, ChevronDown, Trash2, Edit2, AlertTriangle, Clock, X, ShoppingCart } from 'lucide-react';
 import {
   useInventory,
   useLowStock,
   useCreateInventoryItem,
   useUpdateInventoryItem,
   useDeleteInventoryItem,
+  useGenerateShoppingList,
 } from '../hooks/useInventory';
 import type { InventoryItem, Category } from '../types';
 
@@ -28,9 +29,9 @@ interface ItemFormData {
   name: string;
   category: Category;
   quantity: number;
+  targetQuantity: number;
   unit: string;
   expiryDate: string;
-  reorderThreshold: number;
   notes: string;
 }
 
@@ -38,11 +39,25 @@ const emptyForm: ItemFormData = {
   name: '',
   category: 'FOOD',
   quantity: 0,
+  targetQuantity: 0,
   unit: 'pcs',
   expiryDate: '',
-  reorderThreshold: 5,
   notes: '',
 };
+
+function StockBar({ quantity, target }: { quantity: number; target: number }) {
+  if (target <= 0) return <span className="text-xs text-gray-400">No target set</span>;
+  const pct = Math.min(100, Math.round((quantity / target) * 100));
+  const color = pct >= 100 ? 'bg-teal' : pct >= 50 ? 'bg-amber' : 'bg-coral';
+  return (
+    <div className="flex items-center gap-2 min-w-[120px]">
+      <div className="flex-1 bg-sand-dark rounded-full h-2">
+        <div className={`${color} rounded-full h-2 transition-all`} style={{ width: `${pct}%` }} />
+      </div>
+      <span className="text-xs text-gray-500 w-8 text-right">{pct}%</span>
+    </div>
+  );
+}
 
 function ItemModal({
   item,
@@ -57,9 +72,9 @@ function ItemModal({
           name: item.name,
           category: item.category,
           quantity: item.quantity,
+          targetQuantity: item.targetQuantity,
           unit: item.unit,
           expiryDate: item.expiryDate ? item.expiryDate.slice(0, 10) : '',
-          reorderThreshold: item.reorderThreshold,
           notes: item.notes ?? '',
         }
       : emptyForm,
@@ -136,7 +151,7 @@ function ItemModal({
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Quantity</label>
+                <label className="block text-sm font-medium mb-1">On Hand</label>
                 <input
                   type="number"
                   min="0"
@@ -151,20 +166,22 @@ function ItemModal({
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">
-                  Reorder Threshold
+                  Target Qty
                 </label>
                 <input
                   type="number"
                   min="0"
+                  step="0.1"
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-ocean outline-none"
-                  value={form.reorderThreshold}
+                  value={form.targetQuantity}
                   onChange={(e) =>
                     setForm({
                       ...form,
-                      reorderThreshold: parseInt(e.target.value) || 0,
+                      targetQuantity: parseFloat(e.target.value) || 0,
                     })
                   }
                 />
+                <p className="text-xs text-gray-400 mt-1">Ideal fully-stocked amount</p>
               </div>
             </div>
             <div>
@@ -214,6 +231,7 @@ function ItemModal({
 
 export function InventoryPage() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const lowStockFilter = searchParams.get('filter') === 'lowstock';
 
   const [search, setSearch] = useState('');
@@ -232,6 +250,7 @@ export function InventoryPage() {
     order,
   });
   const lowStockQuery = useLowStock();
+  const generateShoppingList = useGenerateShoppingList();
 
   const isLoading = lowStockFilter ? lowStockQuery.isLoading : inventoryQuery.isLoading;
   const data = lowStockFilter
@@ -266,26 +285,64 @@ export function InventoryPage() {
     return diff > 0 && diff < 7 * 24 * 60 * 60 * 1000;
   };
 
-  const isLowStock = (item: InventoryItem) =>
-    item.reorderThreshold > 0 && item.quantity <= item.reorderThreshold;
+  const needsRestock = (item: InventoryItem) =>
+    item.targetQuantity > 0 && item.quantity < item.targetQuantity;
+
+  const getNeeded = (item: InventoryItem) =>
+    item.targetQuantity > 0 ? Math.max(0, Math.round((item.targetQuantity - item.quantity) * 100) / 100) : 0;
+
+  const handleGenerateShoppingList = async () => {
+    try {
+      const list = await generateShoppingList.mutateAsync(undefined);
+      navigate(`/provisioning/${list.id}`);
+    } catch {
+      // Error will be shown via the mutation state
+    }
+  };
 
   return (
     <div>
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         <h1 className="text-2xl font-bold">Inventory</h1>
-        <button
-          onClick={() => setModalItem('new')}
-          className="flex items-center gap-2 bg-ocean text-white px-4 py-2 rounded-lg hover:bg-ocean-light transition-colors"
-        >
-          <Plus className="h-4 w-4" /> Add Item
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={handleGenerateShoppingList}
+            disabled={generateShoppingList.isPending}
+            className="flex items-center gap-2 bg-teal text-white px-4 py-2 rounded-lg hover:bg-teal-light transition-colors disabled:opacity-50"
+          >
+            <ShoppingCart className="h-4 w-4" />
+            {generateShoppingList.isPending ? 'Creating...' : 'Create Shopping List'}
+          </button>
+          <button
+            onClick={() => setModalItem('new')}
+            className="flex items-center gap-2 bg-ocean text-white px-4 py-2 rounded-lg hover:bg-ocean-light transition-colors"
+          >
+            <Plus className="h-4 w-4" /> Add Item
+          </button>
+        </div>
       </div>
+
+      {/* Shopping list generation error */}
+      {generateShoppingList.isError && (
+        <div className="flex items-center gap-2 mb-4 px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg">
+          <AlertTriangle className="h-4 w-4 text-amber" />
+          <span className="text-sm font-medium text-amber-800">
+            All items are fully stocked — nothing to restock!
+          </span>
+          <button
+            onClick={() => generateShoppingList.reset()}
+            className="ml-auto p-1 text-amber-600 hover:text-amber-800 transition-colors"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
 
       {/* Low Stock Filter Banner */}
       {lowStockFilter && (
         <div className="flex items-center gap-2 mb-4 px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg">
           <AlertTriangle className="h-4 w-4 text-amber" />
-          <span className="text-sm font-medium text-amber-800">Showing low stock items only</span>
+          <span className="text-sm font-medium text-amber-800">Showing items below target only</span>
           <button
             onClick={() => setSearchParams({})}
             className="ml-auto p-1 text-amber-600 hover:text-amber-800 transition-colors"
@@ -345,10 +402,12 @@ export function InventoryPage() {
                   {[
                     { field: 'name', label: 'Name' },
                     { field: 'category', label: 'Category' },
-                    { field: 'quantity', label: 'Qty' },
+                    { field: 'quantity', label: 'On Hand' },
+                    { field: 'targetQuantity', label: 'Target' },
+                    { field: '', label: 'Needed' },
+                    { field: '', label: 'Stocked' },
                     { field: 'unit', label: 'Unit' },
                     { field: 'expiryDate', label: 'Expiry' },
-                    { field: '', label: 'Status' },
                     { field: '', label: '' },
                   ].map((col, i) => (
                     <th
@@ -365,60 +424,71 @@ export function InventoryPage() {
                 </tr>
               </thead>
               <tbody>
-                {data?.data.map((item) => (
-                  <tr
-                    key={item.id}
-                    className="border-b border-sand-dark/50 hover:bg-sand/30 transition-colors"
-                  >
-                    <td className="px-4 py-3 font-medium">{item.name}</td>
-                    <td className="px-4 py-3 text-sm">
-                      {CATEGORIES.find((c) => c.value === item.category)?.label}
-                    </td>
-                    <td className="px-4 py-3">{item.quantity}</td>
-                    <td className="px-4 py-3 text-sm">{item.unit}</td>
-                    <td className="px-4 py-3 text-sm">
-                      {item.expiryDate
-                        ? new Date(item.expiryDate).toLocaleDateString()
-                        : '—'}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-1">
-                        {isLowStock(item) && (
-                          <span className="flex items-center gap-1 text-xs px-2 py-0.5 bg-amber-100 text-amber rounded-full">
-                            <AlertTriangle className="h-3 w-3" /> Low
-                          </span>
+                {data?.data.map((item) => {
+                  const needed = getNeeded(item);
+                  return (
+                    <tr
+                      key={item.id}
+                      className={`border-b border-sand-dark/50 transition-colors ${
+                        needsRestock(item) ? 'bg-amber-50/30' : 'hover:bg-sand/30'
+                      }`}
+                    >
+                      <td className="px-4 py-3 font-medium">{item.name}</td>
+                      <td className="px-4 py-3 text-sm">
+                        {CATEGORIES.find((c) => c.value === item.category)?.label}
+                      </td>
+                      <td className="px-4 py-3">{item.quantity}</td>
+                      <td className="px-4 py-3 text-gray-500">
+                        {item.targetQuantity > 0 ? item.targetQuantity : '—'}
+                      </td>
+                      <td className="px-4 py-3">
+                        {needed > 0 ? (
+                          <span className="text-sm font-medium text-coral">{needed}</span>
+                        ) : item.targetQuantity > 0 ? (
+                          <span className="text-sm text-teal">Full</span>
+                        ) : (
+                          <span className="text-sm text-gray-400">—</span>
                         )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <StockBar quantity={item.quantity} target={item.targetQuantity} />
+                      </td>
+                      <td className="px-4 py-3 text-sm">{item.unit}</td>
+                      <td className="px-4 py-3 text-sm">
+                        {item.expiryDate
+                          ? new Date(item.expiryDate).toLocaleDateString()
+                          : '—'}
                         {isExpiringSoon(item) && (
-                          <span className="flex items-center gap-1 text-xs px-2 py-0.5 bg-red-100 text-coral rounded-full">
-                            <Clock className="h-3 w-3" /> Expiring
+                          <span className="ml-1 inline-flex items-center gap-1 text-xs px-2 py-0.5 bg-red-100 text-coral rounded-full">
+                            <Clock className="h-3 w-3" />
                           </span>
                         )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => setModalItem(item)}
-                          className="p-1 text-gray-400 hover:text-ocean transition-colors"
-                        >
-                          <Edit2 className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (confirm('Delete this item?'))
-                              deleteMutation.mutate(item.id);
-                          }}
-                          className="p-1 text-gray-400 hover:text-coral transition-colors"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => setModalItem(item)}
+                            className="p-1 text-gray-400 hover:text-ocean transition-colors"
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (confirm('Delete this item?'))
+                                deleteMutation.mutate(item.id);
+                            }}
+                            className="p-1 text-gray-400 hover:text-coral transition-colors"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
                 {data?.data.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-4 py-12 text-center text-gray-400">
+                    <td colSpan={9} className="px-4 py-12 text-center text-gray-400">
                       No items found.
                     </td>
                   </tr>
@@ -429,54 +499,63 @@ export function InventoryPage() {
 
           {/* Mobile cards */}
           <div className="md:hidden space-y-3">
-            {data?.data.map((item) => (
-              <div key={item.id} className="bg-white rounded-xl shadow-sm p-4">
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <p className="font-medium">{item.name}</p>
-                    <p className="text-xs text-gray-500">
-                      {CATEGORIES.find((c) => c.value === item.category)?.label}
-                    </p>
+            {data?.data.map((item) => {
+              const needed = getNeeded(item);
+              return (
+                <div key={item.id} className={`bg-white rounded-xl shadow-sm p-4 ${needsRestock(item) ? 'border-l-4 border-amber' : ''}`}>
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <p className="font-medium">{item.name}</p>
+                      <p className="text-xs text-gray-500">
+                        {CATEGORIES.find((c) => c.value === item.category)?.label}
+                      </p>
+                    </div>
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => setModalItem(item)}
+                        className="p-1 text-gray-400 hover:text-ocean"
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (confirm('Delete?')) deleteMutation.mutate(item.id);
+                        }}
+                        className="p-1 text-gray-400 hover:text-coral"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex gap-1">
-                    <button
-                      onClick={() => setModalItem(item)}
-                      className="p-1 text-gray-400 hover:text-ocean"
-                    >
-                      <Edit2 className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (confirm('Delete?')) deleteMutation.mutate(item.id);
-                      }}
-                      className="p-1 text-gray-400 hover:text-coral"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                  <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
+                    <span>
+                      <span className="text-gray-400 text-xs">On hand:</span> {item.quantity} {item.unit}
+                    </span>
+                    {item.targetQuantity > 0 && (
+                      <span>
+                        <span className="text-gray-400 text-xs">Target:</span> {item.targetQuantity} {item.unit}
+                      </span>
+                    )}
+                    {needed > 0 && (
+                      <span className="text-coral font-medium">
+                        Need {needed}
+                      </span>
+                    )}
                   </div>
-                </div>
-                <div className="flex items-center gap-4 text-sm text-gray-600">
-                  <span>
-                    {item.quantity} {item.unit}
-                  </span>
+                  <StockBar quantity={item.quantity} target={item.targetQuantity} />
                   {item.expiryDate && (
-                    <span>Exp: {new Date(item.expiryDate).toLocaleDateString()}</span>
+                    <div className="text-xs text-gray-500 mt-2">
+                      Exp: {new Date(item.expiryDate).toLocaleDateString()}
+                      {isExpiringSoon(item) && (
+                        <span className="ml-1 inline-flex items-center gap-1 text-xs px-2 py-0.5 bg-red-100 text-coral rounded-full">
+                          <Clock className="h-3 w-3" /> Expiring
+                        </span>
+                      )}
+                    </div>
                   )}
                 </div>
-                <div className="flex gap-1 mt-2">
-                  {isLowStock(item) && (
-                    <span className="flex items-center gap-1 text-xs px-2 py-0.5 bg-amber-100 text-amber rounded-full">
-                      <AlertTriangle className="h-3 w-3" /> Low Stock
-                    </span>
-                  )}
-                  {isExpiringSoon(item) && (
-                    <span className="flex items-center gap-1 text-xs px-2 py-0.5 bg-red-100 text-coral rounded-full">
-                      <Clock className="h-3 w-3" /> Expiring
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
+              );
+            })}
             {data?.data.length === 0 && (
               <p className="text-center text-gray-400 py-12">No items found.</p>
             )}

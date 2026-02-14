@@ -27,6 +27,7 @@ model InventoryItem {
   name             String
   category         String
   quantity         Float     @default(0)
+  targetQuantity   Float     @default(0)
   unit             String
   expiryDate       DateTime?
   reorderThreshold Float     @default(0)

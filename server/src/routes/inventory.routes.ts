@@ -16,6 +16,7 @@ const createItemSchema = z.object({
   name: z.string().min(1).max(200),
   category: CategoryEnum,
   quantity: z.number().min(0),
+  targetQuantity: z.number().min(0).optional(),
   unit: z.string().min(1).max(50),
   expiryDate: z.string().nullable().optional(),
   reorderThreshold: z.number().min(0).optional(),
@@ -86,4 +87,12 @@ inventoryRouter.delete('/:id', asyncHandler(async (req, res) => {
   const ok = await inventoryService.deleteInventoryItem(id, req.user!.id);
   if (!ok) throw new AppError(404, 'Item not found');
   res.status(204).end();
+}));
+
+// POST /api/inventory/generate-shopping-list
+inventoryRouter.post('/generate-shopping-list', asyncHandler(async (req, res) => {
+  const name = typeof req.body?.name === 'string' ? req.body.name : undefined;
+  const list = await inventoryService.generateShoppingList(req.user!.id, name);
+  if (!list) throw new AppError(400, 'All items are fully stocked — nothing to restock');
+  res.status(201).json(list);
 }));
