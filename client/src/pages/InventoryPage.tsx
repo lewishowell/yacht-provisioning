@@ -28,8 +28,8 @@ const UNITS = ['pcs', 'kg', 'g', 'L', 'mL', 'bottles', 'cans', 'boxes', 'packs',
 interface ItemFormData {
   name: string;
   category: Category;
-  quantity: number;
-  targetQuantity: number;
+  quantity: string;
+  targetQuantity: string;
   unit: string;
   expiryDate: string;
   notes: string;
@@ -38,8 +38,8 @@ interface ItemFormData {
 const emptyForm: ItemFormData = {
   name: '',
   category: 'FOOD',
-  quantity: 0,
-  targetQuantity: 0,
+  quantity: '',
+  targetQuantity: '',
   unit: 'pcs',
   expiryDate: '',
   notes: '',
@@ -71,8 +71,8 @@ function ItemModal({
       ? {
           name: item.name,
           category: item.category,
-          quantity: item.quantity,
-          targetQuantity: item.targetQuantity,
+          quantity: String(item.quantity),
+          targetQuantity: String(item.targetQuantity),
           unit: item.unit,
           expiryDate: item.expiryDate ? item.expiryDate.slice(0, 10) : '',
           notes: item.notes ?? '',
@@ -86,7 +86,11 @@ function ItemModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const payload = {
-      ...form,
+      name: form.name,
+      category: form.category,
+      quantity: parseFloat(form.quantity) || 0,
+      targetQuantity: parseFloat(form.targetQuantity) || 0,
+      unit: form.unit,
       expiryDate: form.expiryDate || null,
       notes: form.notes || null,
     };
@@ -101,13 +105,14 @@ function ItemModal({
   const isPending = createMutation.isPending || updateMutation.isPending;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          <h2 className="text-lg font-bold mb-4">
-            {item ? 'Edit Item' : 'Add Item'}
-          </h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="fixed inset-0 bg-black/50 z-50 overflow-y-auto overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
+      <div className="min-h-full flex items-start sm:items-center justify-center p-4 py-8">
+        <div className="bg-white rounded-xl shadow-xl w-full max-w-lg">
+          <div className="p-6">
+            <h2 className="text-lg font-bold mb-4">
+              {item ? 'Edit Item' : 'Add Item'}
+            </h2>
+            <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-1">Name</label>
               <input
@@ -157,10 +162,12 @@ function ItemModal({
                   min="0"
                   step="0.1"
                   required
+                  inputMode="decimal"
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-ocean outline-none"
                   value={form.quantity}
+                  onFocus={(e) => e.target.select()}
                   onChange={(e) =>
-                    setForm({ ...form, quantity: parseFloat(e.target.value) || 0 })
+                    setForm({ ...form, quantity: e.target.value })
                   }
                 />
               </div>
@@ -172,12 +179,14 @@ function ItemModal({
                   type="number"
                   min="0"
                   step="0.1"
+                  inputMode="decimal"
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-ocean outline-none"
                   value={form.targetQuantity}
+                  onFocus={(e) => e.target.select()}
                   onChange={(e) =>
                     setForm({
                       ...form,
-                      targetQuantity: parseFloat(e.target.value) || 0,
+                      targetQuantity: e.target.value,
                     })
                   }
                 />
@@ -222,7 +231,8 @@ function ItemModal({
                 {isPending ? 'Saving...' : item ? 'Update' : 'Add Item'}
               </button>
             </div>
-          </form>
+            </form>
+          </div>
         </div>
       </div>
     </div>
@@ -304,18 +314,18 @@ export function InventoryPage() {
     <div>
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         <h1 className="text-2xl font-bold">Inventory</h1>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <button
             onClick={handleGenerateShoppingList}
             disabled={generateShoppingList.isPending}
-            className="flex items-center gap-2 bg-teal text-white px-4 py-2 rounded-lg hover:bg-teal-light transition-colors disabled:opacity-50"
+            className="flex items-center justify-center gap-2 bg-teal text-white px-4 py-2 rounded-lg hover:bg-teal-light transition-colors disabled:opacity-50"
           >
             <ShoppingCart className="h-4 w-4" />
             {generateShoppingList.isPending ? 'Creating...' : 'Create Shopping List'}
           </button>
           <button
             onClick={() => setModalItem('new')}
-            className="flex items-center gap-2 bg-ocean text-white px-4 py-2 rounded-lg hover:bg-ocean-light transition-colors"
+            className="flex items-center justify-center gap-2 bg-ocean text-white px-4 py-2 rounded-lg hover:bg-ocean-light transition-colors"
           >
             <Plus className="h-4 w-4" /> Add Item
           </button>

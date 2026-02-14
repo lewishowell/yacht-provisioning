@@ -1,6 +1,6 @@
 {
   "installCommand": "npm install --include=dev",
-  "buildCommand": "npm run build -w client",
+  "buildCommand": "npx prisma migrate deploy --schema=server/prisma/schema.prisma && npm run build -w client",
   "outputDirectory": "client/dist",
   "framework": null,
   "rewrites": [
