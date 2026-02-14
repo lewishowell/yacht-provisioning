@@ -304,18 +304,18 @@ export function InventoryPage() {
     <div>
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         <h1 className="text-2xl font-bold">Inventory</h1>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <button
             onClick={handleGenerateShoppingList}
             disabled={generateShoppingList.isPending}
-            className="flex items-center gap-2 bg-teal text-white px-4 py-2 rounded-lg hover:bg-teal-light transition-colors disabled:opacity-50"
+            className="flex items-center justify-center gap-2 bg-teal text-white px-4 py-2 rounded-lg hover:bg-teal-light transition-colors disabled:opacity-50"
           >
             <ShoppingCart className="h-4 w-4" />
             {generateShoppingList.isPending ? 'Creating...' : 'Create Shopping List'}
           </button>
           <button
             onClick={() => setModalItem('new')}
-            className="flex items-center gap-2 bg-ocean text-white px-4 py-2 rounded-lg hover:bg-ocean-light transition-colors"
+            className="flex items-center justify-center gap-2 bg-ocean text-white px-4 py-2 rounded-lg hover:bg-ocean-light transition-colors"
           >
             <Plus className="h-4 w-4" /> Add Item
           </button>
