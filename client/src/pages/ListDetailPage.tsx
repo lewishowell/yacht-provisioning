@@ -21,6 +21,8 @@ import {
 } from '../hooks/useProvisioningLists';
 import type { Category, ListStatus } from '../types';
 
+const UNITS = ['pcs', 'kg', 'g', 'L', 'mL', 'bottles', 'cans', 'boxes', 'packs', 'rolls'];
+
 const CATEGORIES: { value: Category; label: string }[] = [
   { value: 'FOOD', label: 'Food' },
   { value: 'BEVERAGES', label: 'Beverages' },
@@ -239,11 +241,15 @@ export function ListDetailPage() {
             </div>
             <div className="w-24">
               <label className="block text-xs font-medium mb-1">Unit</label>
-              <input
+              <select
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-ocean outline-none"
                 value={newItem.unit}
                 onChange={(e) => setNewItem({ ...newItem, unit: e.target.value })}
-              />
+              >
+                {UNITS.map((u) => (
+                  <option key={u} value={u}>{u}</option>
+                ))}
+              </select>
             </div>
             <button
               type="submit"
@@ -285,56 +291,66 @@ export function ListDetailPage() {
               {items.map((item) =>
                 editingItemId === item.id ? (
                   <tr key={item.id} className="border-b border-sand-dark/50 bg-blue-50/30">
-                    <td className="px-4 py-2"></td>
-                    <td className="px-4 py-2">
-                      <input
-                        className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-ocean outline-none"
-                        value={editForm.name}
-                        onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                      />
-                    </td>
-                    <td className="px-4 py-2 hidden sm:table-cell">
-                      <select
-                        className="border border-gray-300 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-ocean outline-none"
-                        value={editForm.category}
-                        onChange={(e) => setEditForm({ ...editForm, category: e.target.value as Category })}
-                      >
-                        {CATEGORIES.map((c) => (
-                          <option key={c.value} value={c.value}>{c.label}</option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="px-4 py-2">
-                      <input
-                        type="number"
-                        min="1"
-                        className="w-16 border border-gray-300 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-ocean outline-none"
-                        value={editForm.quantity}
-                        onChange={(e) => setEditForm({ ...editForm, quantity: parseInt(e.target.value) || 1 })}
-                      />
-                    </td>
-                    <td className="px-4 py-2 hidden sm:table-cell">
-                      <input
-                        className="w-20 border border-gray-300 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-ocean outline-none"
-                        value={editForm.unit}
-                        onChange={(e) => setEditForm({ ...editForm, unit: e.target.value })}
-                      />
-                    </td>
-                    <td className="px-4 py-2 no-print">
-                      <div className="flex gap-1">
-                        <button
-                          onClick={handleSaveEdit}
-                          disabled={updateItem.isPending}
-                          className="p-1 text-teal hover:text-teal-light transition-colors disabled:opacity-50"
-                        >
-                          <Save className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => setEditingItemId(null)}
-                          className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
+                    <td colSpan={6} className="px-4 py-3">
+                      <div className="flex flex-wrap gap-2 items-end">
+                        <div className="flex-1 min-w-[120px]">
+                          <label className="block text-xs font-medium mb-1">Name</label>
+                          <input
+                            className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-ocean outline-none"
+                            value={editForm.name}
+                            onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                          />
+                        </div>
+                        <div className="min-w-[100px]">
+                          <label className="block text-xs font-medium mb-1">Category</label>
+                          <select
+                            className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-ocean outline-none"
+                            value={editForm.category}
+                            onChange={(e) => setEditForm({ ...editForm, category: e.target.value as Category })}
+                          >
+                            {CATEGORIES.map((c) => (
+                              <option key={c.value} value={c.value}>{c.label}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="w-16">
+                          <label className="block text-xs font-medium mb-1">Qty</label>
+                          <input
+                            type="number"
+                            min="1"
+                            className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-ocean outline-none"
+                            value={editForm.quantity}
+                            onFocus={(e) => e.target.select()}
+                            onChange={(e) => setEditForm({ ...editForm, quantity: parseInt(e.target.value) || 1 })}
+                          />
+                        </div>
+                        <div className="w-20">
+                          <label className="block text-xs font-medium mb-1">Unit</label>
+                          <select
+                            className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-ocean outline-none"
+                            value={editForm.unit}
+                            onChange={(e) => setEditForm({ ...editForm, unit: e.target.value })}
+                          >
+                            {UNITS.map((u) => (
+                              <option key={u} value={u}>{u}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="flex gap-1">
+                          <button
+                            onClick={handleSaveEdit}
+                            disabled={updateItem.isPending}
+                            className="p-1.5 text-white bg-teal rounded hover:bg-teal-light transition-colors disabled:opacity-50"
+                          >
+                            <Save className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => setEditingItemId(null)}
+                            className="p-1.5 text-gray-500 bg-gray-100 rounded hover:bg-gray-200 transition-colors"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
                       </div>
                     </td>
                   </tr>
