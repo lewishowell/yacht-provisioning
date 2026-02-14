@@ -49,12 +49,12 @@ export async function deleteList(id: string, userId: string) {
 export async function addListItem(
   listId: string,
   userId: string,
-  data: { name: string; category: string; quantity: number; unit: string },
+  data: { name: string; category: string; quantity: number; unit: string; itemType?: string },
 ) {
   const list = await prisma.provisioningList.findFirst({ where: { id: listId, userId } });
   if (!list) return null;
   return prisma.provisioningListItem.create({
-    data: { listId, ...data },
+    data: { listId, name: data.name, category: data.category, quantity: data.quantity, unit: data.unit, itemType: data.itemType ?? 'trip' },
   });
 }
 
@@ -101,38 +101,86 @@ export async function purchaseItem(listId: string, itemId: string, userId: strin
       data: { purchased: true, purchasedAt: new Date() },
     });
 
-    // Find matching inventory item
-    const existingInventory = await tx.inventoryItem.findFirst({
-      where: {
-        userId,
-        name: item.name,
-        category: item.category,
-        unit: item.unit,
-      },
-    });
-
-    if (existingInventory) {
-      // Increment quantity
-      await tx.inventoryItem.update({
-        where: { id: existingInventory.id },
-        data: { quantity: { increment: item.quantity } },
-      });
-    } else {
-      // Create new inventory item
-      await tx.inventoryItem.create({
-        data: {
+    // Only sync restock items to inventory
+    if (item.itemType === 'restock') {
+      const existingInventory = await tx.inventoryItem.findFirst({
+        where: {
           userId,
           name: item.name,
           category: item.category,
-          quantity: item.quantity,
           unit: item.unit,
-          reorderThreshold: 0,
         },
       });
+
+      if (existingInventory) {
+        await tx.inventoryItem.update({
+          where: { id: existingInventory.id },
+          data: { quantity: { increment: item.quantity } },
+        });
+      } else {
+        await tx.inventoryItem.create({
+          data: {
+            userId,
+            name: item.name,
+            category: item.category,
+            quantity: item.quantity,
+            unit: item.unit,
+            reorderThreshold: 0,
+          },
+        });
+      }
     }
 
     return updatedItem;
   });
+}
+
+/**
+ * Add restock items to an existing provisioning list from inventory shortfalls.
+ * Only adds items that aren't already on the list (by name + category + unit).
+ */
+export async function addRestockItems(listId: string, userId: string) {
+  const list = await prisma.provisioningList.findFirst({
+    where: { id: listId, userId },
+    include: { items: true },
+  });
+  if (!list) return null;
+
+  // Find inventory shortfalls
+  const inventoryItems = await prisma.inventoryItem.findMany({
+    where: { userId, targetQuantity: { gt: 0 } },
+  });
+  const shortfalls = inventoryItems.filter((i) => i.quantity < i.targetQuantity);
+
+  if (shortfalls.length === 0) return { list, added: 0 };
+
+  // Filter out items already on the list (by name + category + unit)
+  const existing = new Set(
+    list.items.map((i) => `${i.name}|${i.category}|${i.unit}`),
+  );
+  const toAdd = shortfalls.filter(
+    (i) => !existing.has(`${i.name}|${i.category}|${i.unit}`),
+  );
+
+  if (toAdd.length === 0) return { list, added: 0 };
+
+  await prisma.provisioningListItem.createMany({
+    data: toAdd.map((item) => ({
+      listId,
+      name: item.name,
+      category: item.category,
+      quantity: Math.round((item.targetQuantity - item.quantity) * 100) / 100,
+      unit: item.unit,
+      itemType: 'restock',
+    })),
+  });
+
+  // Return refreshed list
+  const updated = await prisma.provisioningList.findFirst({
+    where: { id: listId, userId },
+    include: { items: { orderBy: { createdAt: 'asc' } } },
+  });
+  return { list: updated, added: toAdd.length };
 }
 
 export async function exportListCSV(id: string, userId: string) {

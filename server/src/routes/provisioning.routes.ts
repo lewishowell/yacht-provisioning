@@ -25,11 +25,14 @@ const updateListSchema = z.object({
   status: StatusEnum.optional(),
 });
 
+const ItemTypeEnum = z.enum(['restock', 'trip']);
+
 const createItemSchema = z.object({
   name: z.string().min(1).max(200),
   category: CategoryEnum,
   quantity: z.number().min(0),
   unit: z.string().min(1).max(50),
+  itemType: ItemTypeEnum.optional(),
 });
 
 const updateItemSchema = createItemSchema.partial();
@@ -84,6 +87,14 @@ provisioningRouter.delete('/:id', asyncHandler(async (req, res) => {
   const ok = await provisioningService.deleteList(id, req.user!.id);
   if (!ok) throw new AppError(404, 'List not found');
   res.status(204).end();
+}));
+
+// POST /api/provisioning-lists/:id/add-restock-items
+provisioningRouter.post('/:id/add-restock-items', asyncHandler(async (req, res) => {
+  const id = req.params.id as string;
+  const result = await provisioningService.addRestockItems(id, req.user!.id);
+  if (!result) throw new AppError(404, 'List not found');
+  res.json(result);
 }));
 
 // POST /api/provisioning-lists/:id/items

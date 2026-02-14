@@ -206,6 +206,7 @@ export async function generateShoppingList(userId: string, name?: string) {
           category: item.category,
           quantity: Math.round((item.targetQuantity - item.quantity) * 100) / 100,
           unit: item.unit,
+          itemType: 'restock',
         })),
       },
     },
