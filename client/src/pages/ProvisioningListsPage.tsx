@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Plus, ClipboardList, Trash2 } from 'lucide-react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { Plus, ClipboardList, Trash2, X } from 'lucide-react';
 import { useProvisioningLists, useCreateList, useDeleteList } from '../hooks/useProvisioningLists';
 import type { ProvisioningList, ListStatus } from '../types';
 
@@ -92,9 +92,16 @@ function ProgressBar({ list }: { list: ProvisioningList }) {
 }
 
 export function ProvisioningListsPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const statusFilter = searchParams.get('status') as ListStatus | null;
+
   const [showCreate, setShowCreate] = useState(false);
-  const { data: lists, isLoading } = useProvisioningLists();
+  const { data: allLists, isLoading } = useProvisioningLists();
   const deleteMutation = useDeleteList();
+
+  const lists = statusFilter && allLists
+    ? allLists.filter((l) => l.status === statusFilter)
+    : allLists;
 
   if (isLoading) {
     return (
@@ -115,6 +122,24 @@ export function ProvisioningListsPage() {
           <Plus className="h-4 w-4" /> New List
         </button>
       </div>
+
+      {/* Status Filter Banner */}
+      {statusFilter && (
+        <div className="flex items-center gap-2 mb-4 px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg">
+          <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_COLORS[statusFilter]}`}>
+            {statusFilter}
+          </span>
+          <span className="text-sm font-medium text-blue-800">
+            Showing {statusFilter.toLowerCase()} lists only
+          </span>
+          <button
+            onClick={() => setSearchParams({})}
+            className="ml-auto p-1 text-blue-600 hover:text-blue-800 transition-colors"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
 
       {!lists || lists.length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm p-12 text-center">

@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { Search, Plus, ChevronUp, ChevronDown, Trash2, Edit2, AlertTriangle, Clock } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { Search, Plus, ChevronUp, ChevronDown, Trash2, Edit2, AlertTriangle, Clock, X } from 'lucide-react';
 import {
   useInventory,
+  useLowStock,
   useCreateInventoryItem,
   useUpdateInventoryItem,
   useDeleteInventoryItem,
@@ -211,6 +213,9 @@ function ItemModal({
 }
 
 export function InventoryPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const lowStockFilter = searchParams.get('filter') === 'lowstock';
+
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<Category | ''>('');
   const [sort, setSort] = useState('name');
@@ -218,7 +223,7 @@ export function InventoryPage() {
   const [page, setPage] = useState(1);
   const [modalItem, setModalItem] = useState<InventoryItem | null | 'new'>(null);
 
-  const { data, isLoading } = useInventory({
+  const inventoryQuery = useInventory({
     page,
     pageSize: 20,
     search,
@@ -226,6 +231,14 @@ export function InventoryPage() {
     sort,
     order,
   });
+  const lowStockQuery = useLowStock();
+
+  const isLoading = lowStockFilter ? lowStockQuery.isLoading : inventoryQuery.isLoading;
+  const data = lowStockFilter
+    ? lowStockQuery.data
+      ? { data: lowStockQuery.data, totalPages: 1 }
+      : undefined
+    : inventoryQuery.data;
 
   const deleteMutation = useDeleteInventoryItem();
 
@@ -267,6 +280,20 @@ export function InventoryPage() {
           <Plus className="h-4 w-4" /> Add Item
         </button>
       </div>
+
+      {/* Low Stock Filter Banner */}
+      {lowStockFilter && (
+        <div className="flex items-center gap-2 mb-4 px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg">
+          <AlertTriangle className="h-4 w-4 text-amber" />
+          <span className="text-sm font-medium text-amber-800">Showing low stock items only</span>
+          <button
+            onClick={() => setSearchParams({})}
+            className="ml-auto p-1 text-amber-600 hover:text-amber-800 transition-colors"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
 
       {/* Search + Filter */}
       <div className="flex flex-col sm:flex-row gap-3 mb-4">

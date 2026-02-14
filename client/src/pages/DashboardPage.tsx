@@ -88,9 +88,9 @@ export function DashboardPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatCard icon={Package} label="Total Items" value={s.totalItems} color="bg-ocean" to="/inventory" />
-        <StatCard icon={AlertTriangle} label="Low Stock" value={s.lowStockCount} color="bg-amber" to="/inventory" />
-        <StatCard icon={ClipboardList} label="Active Lists" value={s.activeLists} color="bg-teal" to="/provisioning" />
-        <StatCard icon={ShoppingCart} label="Pending Purchases" value={s.pendingPurchases} color="bg-navy" to="/provisioning" />
+        <StatCard icon={AlertTriangle} label="Low Stock" value={s.lowStockCount} color="bg-amber" to="/inventory?filter=lowstock" />
+        <StatCard icon={ClipboardList} label="Active Lists" value={s.activeLists} color="bg-teal" to="/provisioning?status=ACTIVE" />
+        <StatCard icon={ShoppingCart} label="Pending Purchases" value={s.pendingPurchases} color="bg-navy" to="/provisioning?status=ACTIVE" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
