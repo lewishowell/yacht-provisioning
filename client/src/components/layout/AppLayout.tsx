@@ -146,12 +146,12 @@ export function AppLayout() {
       )}
 
       {/* Main content */}
-      <main className="flex-1 p-4 md:p-8 overflow-auto">
+      <main className="flex-1 p-4 pb-20 md:p-8 md:pb-8 overflow-auto">
         <Outlet />
       </main>
 
       {/* Mobile bottom tabs */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-sand-dark flex no-print z-20">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-sand-dark flex no-print z-20 pb-[env(safe-area-inset-bottom)]">
         {navItems.map((item) => {
           const isActive =
             item.to === '/'
