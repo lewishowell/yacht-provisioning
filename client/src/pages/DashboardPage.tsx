@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Package, ClipboardList, ShoppingCart, Clock, Target } from 'lucide-react';
+import { Package, ClipboardList, UtensilsCrossed, Clock, Target } from 'lucide-react';
 import { useDashboardStats } from '../hooks/useProvisioningLists';
 import type { DashboardStats, InventoryItem } from '../types';
 
@@ -13,46 +13,6 @@ const CATEGORY_LABELS: Record<string, string> = {
   SAFETY: 'Safety',
   OTHER: 'Other',
 };
-
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-  color,
-  to,
-}: {
-  icon: React.ElementType;
-  label: string;
-  value: number | string;
-  color: string;
-  to?: string;
-}) {
-  const content = (
-    <>
-      <div className={`${color} rounded-lg p-3`}>
-        <Icon className="h-6 w-6 text-white" />
-      </div>
-      <div>
-        <p className="text-2xl font-bold">{value}</p>
-        <p className="text-sm text-gray-500">{label}</p>
-      </div>
-    </>
-  );
-
-  if (to) {
-    return (
-      <Link to={to} className="bg-white rounded-xl shadow-sm p-6 flex items-center gap-4 hover:shadow-md transition-shadow">
-        {content}
-      </Link>
-    );
-  }
-
-  return (
-    <div className="bg-white rounded-xl shadow-sm p-6 flex items-center gap-4">
-      {content}
-    </div>
-  );
-}
 
 function StockBadge({ item }: { item: InventoryItem }) {
   if (item.targetQuantity <= 0) return null;
@@ -89,24 +49,74 @@ export function DashboardPage() {
 
   const defaults: DashboardStats = {
     totalItems: 0,
+    inventoryPct: 100,
     lowStockCount: 0,
+    itemsNeeded: 0,
     activeLists: 0,
-    pendingPurchases: 0,
+    mealsStocked: 0,
+    totalMeals: 0,
     lowStockItems: [],
     expiringSoon: [],
     recentLists: [],
   };
   const s: DashboardStats = { ...defaults, ...stats };
 
+  const pctColor = s.inventoryPct >= 80 ? 'text-teal' : s.inventoryPct >= 50 ? 'text-amber' : 'text-coral';
+  const pctBarColor = s.inventoryPct >= 80 ? 'bg-teal' : s.inventoryPct >= 50 ? 'bg-amber' : 'bg-coral';
+
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatCard icon={Package} label="Total Items" value={s.totalItems} color="bg-ocean" to="/inventory" />
-        <StatCard icon={Target} label="Below Target" value={s.lowStockCount} color="bg-amber" to="/inventory?filter=lowstock" />
-        <StatCard icon={ClipboardList} label="Active Lists" value={s.activeLists} color="bg-teal" to="/provisioning?status=ACTIVE" />
-        <StatCard icon={ShoppingCart} label="Pending Purchases" value={s.pendingPurchases} color="bg-navy" to="/provisioning?status=ACTIVE" />
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        {/* Inventory Status */}
+        <Link to="/inventory" className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow">
+          <div className="flex items-center gap-4">
+            <div className="bg-ocean rounded-lg p-3">
+              <Package className="h-6 w-6 text-white" />
+            </div>
+            <div className="flex-1">
+              <p className={`text-2xl font-bold ${pctColor}`}>{s.inventoryPct}%</p>
+              <p className="text-sm text-gray-500">Inventory Stocked</p>
+            </div>
+          </div>
+          <div className="mt-3">
+            <div className="w-full bg-sand-dark rounded-full h-2">
+              <div className={`${pctBarColor} rounded-full h-2 transition-all`} style={{ width: `${s.inventoryPct}%` }} />
+            </div>
+            <p className="text-xs text-gray-400 mt-1">{s.totalItems} items tracked</p>
+          </div>
+        </Link>
+
+        {/* Items Needed */}
+        <Link to="/inventory?filter=lowstock" className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow">
+          <div className="flex items-center gap-4">
+            <div className="bg-amber rounded-lg p-3">
+              <Target className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{s.itemsNeeded}</p>
+              <p className="text-sm text-gray-500">Items Needed</p>
+            </div>
+          </div>
+          <p className="text-xs text-gray-400 mt-3">Across {s.lowStockCount} product{s.lowStockCount !== 1 ? 's' : ''} below target</p>
+        </Link>
+
+        {/* Meals Stocked */}
+        <Link to="/meals" className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow">
+          <div className="flex items-center gap-4">
+            <div className="bg-purple-500 rounded-lg p-3">
+              <UtensilsCrossed className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">
+                {s.mealsStocked}<span className="text-base font-normal text-gray-400">/{s.totalMeals}</span>
+              </p>
+              <p className="text-sm text-gray-500">Meals Ready</p>
+            </div>
+          </div>
+          <p className="text-xs text-gray-400 mt-3">Meals with all ingredients in stock</p>
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -175,10 +185,18 @@ export function DashboardPage() {
           )}
         </div>
 
-        {/* Recent Lists */}
+        {/* Active Lists — moved to bottom */}
         <div className="bg-white rounded-xl shadow-sm p-6 lg:col-span-2">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-lg">Recent Provisioning Lists</h2>
+            <div className="flex items-center gap-3">
+              <ClipboardList className="h-5 w-5 text-teal" />
+              <h2 className="font-semibold text-lg">Recent Provisioning Lists</h2>
+              {s.activeLists > 0 && (
+                <span className="text-xs px-2 py-0.5 bg-blue-100 text-ocean rounded-full">
+                  {s.activeLists} active
+                </span>
+              )}
+            </div>
             <Link to="/provisioning" className="text-sm text-ocean hover:underline">View all</Link>
           </div>
           {s.recentLists.length === 0 ? (

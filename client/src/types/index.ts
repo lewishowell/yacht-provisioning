@@ -72,9 +72,12 @@ export interface PaginatedResponse<T> {
 
 export interface DashboardStats {
   totalItems: number;
+  inventoryPct: number;
   lowStockCount: number;
+  itemsNeeded: number;
   activeLists: number;
-  pendingPurchases: number;
+  mealsStocked: number;
+  totalMeals: number;
   lowStockItems: InventoryItem[];
   expiringSoon: InventoryItem[];
   recentLists: ProvisioningList[];
