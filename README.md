@@ -1,6 +1,6 @@
 # YachtProv
 
-Provisioning management app for yacht crew and chefs. Track inventory, create provisioning lists, and sync purchases to inventory automatically.
+Provisioning and meal planning app for yacht crew and chefs. Track inventory, plan meals for trips, create provisioning lists, and sync purchases to inventory automatically.
 
 **Live:** https://yacht-prov.vercel.app
 
@@ -76,3 +76,6 @@ yacht-provisioning/
 - Provisioning lists with item tracking
 - Purchase sync — marking items purchased auto-updates inventory
 - CSV export for provisioning lists
+- Meal library — save reusable meals with ingredient lists
+- Meal planning — assign meals to breakfast, lunch, and dinner slots across trip dates
+- Shopping list generation — create a provisioning list from a meal plan, auto-checking inventory for shortfalls
