@@ -23,7 +23,7 @@ const CATEGORIES: { value: Category | ''; label: string }[] = [
   { value: 'OTHER', label: 'Other' },
 ];
 
-const UNITS = ['pcs', 'kg', 'g', 'L', 'mL', 'bottles', 'cans', 'boxes', 'packs', 'rolls'];
+const UNITS = ['pcs', 'lbs', 'oz', 'gal', 'qt', 'fl oz', 'cups', 'bottles', 'cans', 'boxes', 'packs', 'rolls'];
 
 interface ItemFormData {
   name: string;
