@@ -104,6 +104,31 @@ export interface Meal {
   _count?: { plannedMeals: number };
 }
 
+export interface RecipeSearchResult {
+  id: number;
+  title: string;
+  image: string | null;
+  servings: number;
+  readyInMinutes: number;
+  summary: string;
+}
+
+export interface RecipeDetail {
+  id: number;
+  title: string;
+  image: string | null;
+  servings: number;
+  readyInMinutes: number;
+  summary: string;
+  sourceUrl: string;
+  ingredients: {
+    name: string;
+    quantity: number;
+    unit: string;
+    category: string;
+  }[];
+}
+
 export interface PlannedMeal {
   id: string;
   mealPlanId: string;

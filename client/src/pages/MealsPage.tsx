@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, UtensilsCrossed, Trash2, X, Users, ChevronRight } from 'lucide-react';
+import { Plus, UtensilsCrossed, Trash2, X, Users, ChevronRight, Search } from 'lucide-react';
 import { useMeals, useCreateMeal, useDeleteMeal } from '../hooks/useMeals';
+import { useRecipeEnabled } from '../hooks/useRecipes';
+import { RecipeSearchModal } from '../components/RecipeSearchModal';
 import type { Category, Meal } from '../types';
 
 const CATEGORIES: { value: Category; label: string }[] = [
@@ -213,7 +215,9 @@ function MealCard({ meal, onDelete }: { meal: Meal; onDelete: () => void }) {
 
 export function MealsPage() {
   const [showCreate, setShowCreate] = useState(false);
+  const [showRecipeSearch, setShowRecipeSearch] = useState(false);
   const { data: meals, isLoading } = useMeals();
+  const { data: recipeEnabled } = useRecipeEnabled();
   const deleteMutation = useDeleteMeal();
 
   if (isLoading) {
@@ -228,24 +232,47 @@ export function MealsPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Meals</h1>
-        <button
-          onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 bg-ocean text-white px-4 py-2 rounded-lg hover:bg-ocean-light transition-colors"
-        >
-          <Plus className="h-4 w-4" /> New Meal
-        </button>
+        <div className="flex items-center gap-2">
+          {recipeEnabled && (
+            <button
+              onClick={() => setShowRecipeSearch(true)}
+              className="flex items-center gap-2 border border-ocean text-ocean px-4 py-2 rounded-lg hover:bg-ocean hover:text-white transition-colors"
+            >
+              <Search className="h-4 w-4" /> Find Recipe
+            </button>
+          )}
+          <button
+            onClick={() => setShowCreate(true)}
+            className="flex items-center gap-2 bg-ocean text-white px-4 py-2 rounded-lg hover:bg-ocean-light transition-colors"
+          >
+            <Plus className="h-4 w-4" /> New Meal
+          </button>
+        </div>
       </div>
 
       {!meals || meals.length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm p-12 text-center">
           <UtensilsCrossed className="h-12 w-12 text-gray-300 mx-auto mb-4" />
           <p className="text-gray-500">No meals yet. Build your meal library to start planning.</p>
-          <button
-            onClick={() => setShowCreate(true)}
-            className="mt-4 text-ocean hover:underline text-sm"
-          >
-            Create your first meal
-          </button>
+          <div className="flex items-center justify-center gap-4 mt-4">
+            <button
+              onClick={() => setShowCreate(true)}
+              className="text-ocean hover:underline text-sm"
+            >
+              Create your first meal
+            </button>
+            {recipeEnabled && (
+              <>
+                <span className="text-gray-300">or</span>
+                <button
+                  onClick={() => setShowRecipeSearch(true)}
+                  className="text-ocean hover:underline text-sm"
+                >
+                  Find a recipe online
+                </button>
+              </>
+            )}
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -260,6 +287,7 @@ export function MealsPage() {
       )}
 
       {showCreate && <CreateMealModal onClose={() => setShowCreate(false)} />}
+      {showRecipeSearch && <RecipeSearchModal onClose={() => setShowRecipeSearch(false)} />}
     </div>
   );
 }
