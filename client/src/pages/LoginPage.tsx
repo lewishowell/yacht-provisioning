@@ -1,6 +1,6 @@
 import { useAuth } from '../hooks/useAuth';
 import { Navigate } from 'react-router-dom';
-import { Anchor } from 'lucide-react';
+import { Logo } from '../components/Logo';
 
 export function LoginPage() {
   const { user, loading } = useAuth();
@@ -20,11 +20,11 @@ export function LoginPage() {
       <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md mx-4">
         <div className="flex flex-col items-center mb-8">
           <div className="bg-navy rounded-full p-4 mb-4">
-            <Anchor className="h-10 w-10 text-teal-light" />
+            <Logo className="h-10 w-10" />
           </div>
-          <h1 className="text-2xl font-bold text-navy">YachtProv</h1>
+          <h1 className="text-2xl font-bold text-navy">Stock Up & Go!</h1>
           <p className="text-gray-500 mt-2 text-center">
-            Provisioning management for yacht crew & chefs
+            Know what you have. Get what you need.
           </p>
         </div>
 

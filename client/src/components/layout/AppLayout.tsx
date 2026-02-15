@@ -9,11 +9,11 @@ import {
   LogOut,
   Menu,
   X,
-  Anchor,
   HelpCircle,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { GettingStartedModal } from '../GettingStartedModal';
+import { Logo } from '../Logo';
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
@@ -52,8 +52,8 @@ export function AppLayout() {
       {/* Mobile header */}
       <header className="md:hidden flex items-center justify-between bg-navy text-white p-4 no-print">
         <Link to="/" className="flex items-center gap-2">
-          <Anchor className="h-6 w-6 text-teal-light" />
-          <span className="font-bold text-lg">YachtProv</span>
+          <Logo className="h-7 w-7" />
+          <span className="font-bold text-lg">Stock Up & Go!</span>
         </Link>
         <div className="flex items-center gap-3">
           <button
@@ -76,8 +76,8 @@ export function AppLayout() {
         } md:translate-x-0 fixed md:sticky top-0 h-screen z-40`}
       >
         <Link to="/" className="hidden md:flex items-center gap-3 p-6 border-b border-navy-light">
-          <Anchor className="h-8 w-8 text-teal-light" />
-          <span className="font-bold text-xl">YachtProv</span>
+          <Logo className="h-9 w-9" />
+          <span className="font-bold text-xl">Stock Up & Go!</span>
         </Link>
 
         <nav className="flex-1 p-4 space-y-1">

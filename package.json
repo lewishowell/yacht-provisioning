@@ -1,5 +1,5 @@
 {
-  "name": "yacht-provisioning",
+  "name": "stock-up-and-go",
   "private": true,
   "workspaces": ["client", "server"],
   "scripts": {
