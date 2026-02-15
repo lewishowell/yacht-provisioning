@@ -15,6 +15,7 @@ export interface User {
   email: string;
   name: string;
   avatarUrl: string | null;
+  hasSeenOnboarding: boolean;
 }
 
 export interface InventoryItem {

@@ -109,6 +109,30 @@ authRouter.get('/me', authMiddleware, (req, res) => {
   res.json(req.user);
 });
 
+// Mark onboarding as seen
+authRouter.post('/onboarding-seen', authMiddleware, async (req, res) => {
+  await prisma.user.update({
+    where: { id: req.user!.id },
+    data: { hasSeenOnboarding: true },
+  });
+  res.json({ ok: true });
+});
+
+// Clear seed data (removes all user's inventory items and provisioning lists)
+authRouter.post('/clear-seed-data', authMiddleware, async (req, res) => {
+  const userId = req.user!.id;
+  await prisma.provisioningListItem.deleteMany({
+    where: { list: { userId } },
+  });
+  await prisma.provisioningList.deleteMany({
+    where: { userId },
+  });
+  await prisma.inventoryItem.deleteMany({
+    where: { userId },
+  });
+  res.json({ ok: true });
+});
+
 // Logout
 authRouter.post('/logout', (_req, res) => {
   res.clearCookie('token');

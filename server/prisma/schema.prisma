@@ -9,13 +9,14 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String
-  googleId  String   @unique
-  avatarUrl String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id               String   @id @default(cuid())
+  email            String   @unique
+  name             String
+  googleId         String   @unique
+  avatarUrl        String?
+  hasSeenOnboarding Boolean @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   inventoryItems    InventoryItem[]
   provisioningLists ProvisioningList[]

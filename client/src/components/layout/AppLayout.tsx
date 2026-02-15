@@ -8,8 +8,10 @@ import {
   Menu,
   X,
   Anchor,
+  HelpCircle,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { GettingStartedModal } from '../GettingStartedModal';
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
@@ -18,9 +20,28 @@ const navItems = [
 ];
 
 export function AppLayout() {
-  const { user, logout } = useAuth();
+  const { user, logout, markOnboardingSeen } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const location = useLocation();
+
+  useEffect(() => {
+    if (user && !user.hasSeenOnboarding) {
+      setShowOnboarding(true);
+    }
+  }, [user]);
+
+  const handleCloseOnboarding = () => {
+    setShowOnboarding(false);
+    if (user && !user.hasSeenOnboarding) {
+      markOnboardingSeen();
+    }
+  };
+
+  const handleOpenOnboarding = () => {
+    setShowOnboarding(true);
+    setSidebarOpen(false);
+  };
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
@@ -30,9 +51,18 @@ export function AppLayout() {
           <Anchor className="h-6 w-6 text-teal-light" />
           <span className="font-bold text-lg">YachtProv</span>
         </Link>
-        <button onClick={() => setSidebarOpen(!sidebarOpen)}>
-          {sidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleOpenOnboarding}
+            className="text-gray-300 hover:text-white transition-colors"
+            title="Getting Started"
+          >
+            <HelpCircle className="h-5 w-5" />
+          </button>
+          <button onClick={() => setSidebarOpen(!sidebarOpen)}>
+            {sidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
+        </div>
       </header>
 
       {/* Sidebar */}
@@ -65,6 +95,14 @@ export function AppLayout() {
               {item.label}
             </NavLink>
           ))}
+
+          <button
+            onClick={handleOpenOnboarding}
+            className="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-gray-300 hover:bg-navy-light hover:text-white w-full text-left mt-2"
+          >
+            <HelpCircle className="h-5 w-5" />
+            Getting Started
+          </button>
         </nav>
 
         <div className="p-4 border-t border-navy-light">
@@ -129,6 +167,9 @@ export function AppLayout() {
           );
         })}
       </nav>
+
+      {/* Getting Started Modal */}
+      <GettingStartedModal open={showOnboarding} onClose={handleCloseOnboarding} />
     </div>
   );
 }

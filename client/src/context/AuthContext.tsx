@@ -6,12 +6,14 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   logout: () => Promise<void>;
+  markOnboardingSeen: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
   logout: async () => {},
+  markOnboardingSeen: async () => {},
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -32,8 +34,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.location.href = '/login';
   };
 
+  const markOnboardingSeen = async () => {
+    await api.post('/auth/onboarding-seen');
+    setUser((prev) => prev ? { ...prev, hasSeenOnboarding: true } : prev);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, logout }}>
+    <AuthContext.Provider value={{ user, loading, logout, markOnboardingSeen }}>
       {children}
     </AuthContext.Provider>
   );
