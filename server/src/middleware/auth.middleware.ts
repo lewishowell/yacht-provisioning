@@ -9,6 +9,8 @@ declare global {
       id: string;
       email: string;
       name: string;
+      avatarUrl: string | null;
+      hasSeenOnboarding: boolean;
     }
   }
 }
@@ -27,7 +29,7 @@ export async function authMiddleware(
     const payload = jwt.verify(token, env.JWT_SECRET) as { userId: string };
     const user = await prisma.user.findUnique({
       where: { id: payload.userId },
-      select: { id: true, email: true, name: true },
+      select: { id: true, email: true, name: true, avatarUrl: true, hasSeenOnboarding: true },
     });
 
     if (!user) {
