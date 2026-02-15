@@ -1,8 +1,6 @@
-# YachtProv
+# Stock Up & Go!
 
-Provisioning and meal planning app for yacht crew and chefs. Track inventory, plan meals for trips, create provisioning lists, and sync purchases to inventory automatically.
-
-**Live:** https://yacht-prov.vercel.app
+Inventory management and provisioning app for anyone who needs to stay stocked — homeowners, cabin owners, RV'ers, campers, boaters, and overlanders. Track inventory, plan meals, create provisioning lists, and sync purchases automatically.
 
 ## Tech Stack
 
@@ -14,7 +12,7 @@ Provisioning and meal planning app for yacht crew and chefs. Track inventory, pl
 ## Project Structure
 
 ```
-yacht-provisioning/
+stock-up-and-go/
   client/          # React SPA
   server/          # Express API
   api/             # Vercel serverless entry point

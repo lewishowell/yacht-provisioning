@@ -2,7 +2,6 @@ import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import {
-  Anchor,
   Package,
   ClipboardList,
   UtensilsCrossed,
@@ -13,6 +12,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import api from '../services/api';
+import { Logo } from './Logo';
 
 interface GettingStartedModalProps {
   open: boolean;
@@ -21,13 +21,13 @@ interface GettingStartedModalProps {
 
 const steps = [
   {
-    icon: Anchor,
+    icon: Logo,
     iconColor: 'bg-ocean',
-    title: 'Welcome to YachtProv',
+    title: 'Welcome to Stock Up & Go!',
     content: [
-      'YachtProv helps you manage your boat\u2019s inventory so you always know exactly what\u2019s on board.',
+      'Stock Up & Go! helps you manage your inventory so you always know exactly what you have on hand.',
       'Keep your inventory up to date and generate shopping lists to bring stock levels back to target \u2014 no more guessing what you need before heading to the store.',
-      'When it\u2019s time to prepare for a trip or guests, create on-demand provisioning lists with exactly what you need.',
+      'When it\u2019s time to prepare for a trip, event, or just restock your home, create on-demand provisioning lists with exactly what you need.',
     ],
   },
   {
@@ -35,7 +35,7 @@ const steps = [
     iconColor: 'bg-teal',
     title: 'Step 1: Your Inventory',
     content: [
-      'Your inventory is the foundation of YachtProv. It\u2019s where you track everything on board \u2014 from food and beverages to cleaning supplies and safety gear.',
+      'Your inventory is the foundation of Stock Up & Go! It\u2019s where you track everything you have \u2014 from food and beverages to cleaning supplies and gear.',
       'For each item, set a target quantity so the app knows when you\u2019re running low. You\u2019ll get alerts when items fall below target or are approaching their expiry date.',
       'A well-maintained inventory powers everything else in the app: shopping lists, provisioning, and your dashboard overview.',
     ],
@@ -45,9 +45,9 @@ const steps = [
     iconColor: 'bg-amber',
     title: 'Step 2: Provisioning Lists',
     content: [
-      'Provisioning lists help you prepare for trips and guests. You can create them anytime from the Provisioning page.',
+      'Provisioning lists help you prepare for trips, guests, or routine restocks. You can create them anytime from the Provisioning page.',
       'Top off your inventory by adding restock items \u2014 these are automatically calculated based on what\u2019s below target.',
-      'Need something special that\u2019s not in your regular inventory? Add unique trip items for one-off needs like party supplies or special dietary requests.',
+      'Need something special that\u2019s not in your regular inventory? Add unique items for one-off needs like party supplies or special dietary requests.',
       'Track your purchases as you shop and mark items as bought to keep everything organized.',
     ],
   },
@@ -56,8 +56,8 @@ const steps = [
     iconColor: 'bg-purple-500',
     title: 'Step 3: Meal Planning',
     content: [
-      'Build a library of your favorite meals with their ingredients. Once saved, you can reuse them across any trip.',
-      'Create a meal plan for your trip by assigning meals to breakfast, lunch, and dinner slots for each day.',
+      'Build a library of your favorite meals with their ingredients. Once saved, you can reuse them across any trip or event.',
+      'Create a meal plan by assigning meals to breakfast, lunch, and dinner slots for each day.',
       'When your plan is ready, generate a shopping list with one click \u2014 it checks your inventory and only adds what you\u2019re missing.',
     ],
   },
@@ -67,7 +67,7 @@ const steps = [
     title: 'You\u2019re All Set!',
     content: [
       'We\u2019ve added some sample inventory items and provisioning lists to help you explore. Feel free to keep, edit, or remove them.',
-      'To get started for real, head to your Inventory and add your boat\u2019s essentials \u2014 food, beverages, cleaning supplies, deck gear, and more.',
+      'To get started for real, head to your Inventory and add your essentials \u2014 food, beverages, cleaning supplies, gear, and more.',
       'Once your inventory is set up, creating provisioning lists is a breeze!',
     ],
     isFinal: true,

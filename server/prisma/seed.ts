@@ -5,15 +5,15 @@ const prisma = new PrismaClient();
 async function main() {
   // Find existing user or create demo user
   let user = await prisma.user.findFirst({
-    where: { email: { not: 'chef@yacht.example' } },
+    where: { email: { not: 'demo@stockupandgo.example' } },
   });
   if (!user) {
     user = await prisma.user.upsert({
       where: { googleId: 'demo-google-id' },
       update: {},
       create: {
-        email: 'chef@yacht.example',
-        name: 'Chef Demo',
+        email: 'demo@stockupandgo.example',
+        name: 'Demo User',
         googleId: 'demo-google-id',
         avatarUrl: null,
       },
