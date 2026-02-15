@@ -4,6 +4,8 @@ import {
   LayoutDashboard,
   Package,
   ClipboardList,
+  UtensilsCrossed,
+  CalendarDays,
   LogOut,
   Menu,
   X,
@@ -17,6 +19,8 @@ const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/inventory', icon: Package, label: 'Inventory' },
   { to: '/provisioning', icon: ClipboardList, label: 'Provisioning' },
+  { to: '/meals', icon: UtensilsCrossed, label: 'Meals' },
+  { to: '/meal-plans', icon: CalendarDays, label: 'Meal Plans' },
 ];
 
 export function AppLayout() {

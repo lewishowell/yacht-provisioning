@@ -20,6 +20,8 @@ model User {
 
   inventoryItems    InventoryItem[]
   provisioningLists ProvisioningList[]
+  meals             Meal[]
+  mealPlans         MealPlan[]
 }
 
 model InventoryItem {
@@ -73,4 +75,62 @@ model ProvisioningListItem {
   list ProvisioningList @relation(fields: [listId], references: [id], onDelete: Cascade)
 
   @@index([listId])
+}
+
+model Meal {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  description String?
+  servings    Int      @default(2)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ingredients MealIngredient[]
+  plannedMeals PlannedMeal[]
+
+  @@index([userId])
+}
+
+model MealIngredient {
+  id       String @id @default(cuid())
+  mealId   String
+  name     String
+  category String
+  quantity Float  @default(1)
+  unit     String
+
+  meal Meal @relation(fields: [mealId], references: [id], onDelete: Cascade)
+
+  @@index([mealId])
+}
+
+model MealPlan {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  startDate   DateTime
+  endDate     DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plannedMeals PlannedMeal[]
+
+  @@index([userId])
+}
+
+model PlannedMeal {
+  id         String   @id @default(cuid())
+  mealPlanId String
+  mealId     String
+  date       DateTime
+  slot       String
+
+  mealPlan MealPlan @relation(fields: [mealPlanId], references: [id], onDelete: Cascade)
+  meal     Meal     @relation(fields: [mealId], references: [id], onDelete: Cascade)
+
+  @@index([mealPlanId])
+  @@index([mealId])
 }

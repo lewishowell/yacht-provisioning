@@ -5,6 +5,7 @@ import {
   Anchor,
   Package,
   ClipboardList,
+  UtensilsCrossed,
   Rocket,
   ChevronRight,
   ChevronLeft,
@@ -48,6 +49,16 @@ const steps = [
       'Top off your inventory by adding restock items \u2014 these are automatically calculated based on what\u2019s below target.',
       'Need something special that\u2019s not in your regular inventory? Add unique trip items for one-off needs like party supplies or special dietary requests.',
       'Track your purchases as you shop and mark items as bought to keep everything organized.',
+    ],
+  },
+  {
+    icon: UtensilsCrossed,
+    iconColor: 'bg-purple-500',
+    title: 'Step 3: Meal Planning',
+    content: [
+      'Build a library of your favorite meals with their ingredients. Once saved, you can reuse them across any trip.',
+      'Create a meal plan for your trip by assigning meals to breakfast, lunch, and dinner slots for each day.',
+      'When your plan is ready, generate a shopping list with one click \u2014 it checks your inventory and only adds what you\u2019re missing.',
     ],
   },
   {

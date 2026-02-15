@@ -10,6 +10,8 @@ export type Category =
 
 export type ListStatus = 'DRAFT' | 'ACTIVE' | 'COMPLETED' | 'ARCHIVED';
 
+export type MealSlot = 'breakfast' | 'lunch' | 'dinner';
+
 export interface User {
   id: string;
   email: string;
@@ -76,4 +78,45 @@ export interface DashboardStats {
   lowStockItems: InventoryItem[];
   expiringSoon: InventoryItem[];
   recentLists: ProvisioningList[];
+}
+
+export interface MealIngredient {
+  id: string;
+  mealId: string;
+  name: string;
+  category: Category;
+  quantity: number;
+  unit: string;
+}
+
+export interface Meal {
+  id: string;
+  userId: string;
+  name: string;
+  description: string | null;
+  servings: number;
+  createdAt: string;
+  updatedAt: string;
+  ingredients: MealIngredient[];
+  _count?: { plannedMeals: number };
+}
+
+export interface PlannedMeal {
+  id: string;
+  mealPlanId: string;
+  mealId: string;
+  date: string;
+  slot: MealSlot;
+  meal: Meal;
+}
+
+export interface MealPlan {
+  id: string;
+  userId: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  createdAt: string;
+  updatedAt: string;
+  plannedMeals: PlannedMeal[];
 }
