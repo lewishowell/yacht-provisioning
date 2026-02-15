@@ -46,46 +46,51 @@ mealplanRouter.post('/', asyncHandler(async (req, res) => {
 
 // GET /api/meal-plans/:id
 mealplanRouter.get('/:id', asyncHandler(async (req, res) => {
-  const plan = await mealplanService.getMealPlan(req.params.id, req.user!.id);
+  const id = req.params.id as string;
+  const plan = await mealplanService.getMealPlan(id, req.user!.id);
   if (!plan) throw new AppError(404, 'Meal plan not found');
   res.json(plan);
 }));
 
 // PATCH /api/meal-plans/:id
 mealplanRouter.patch('/:id', asyncHandler(async (req, res) => {
+  const id = req.params.id as string;
   const data = updatePlanSchema.parse(req.body);
-  const plan = await mealplanService.updateMealPlan(req.params.id, req.user!.id, data);
+  const plan = await mealplanService.updateMealPlan(id, req.user!.id, data);
   if (!plan) throw new AppError(404, 'Meal plan not found');
   res.json(plan);
 }));
 
 // DELETE /api/meal-plans/:id
 mealplanRouter.delete('/:id', asyncHandler(async (req, res) => {
-  const ok = await mealplanService.deleteMealPlan(req.params.id, req.user!.id);
+  const id = req.params.id as string;
+  const ok = await mealplanService.deleteMealPlan(id, req.user!.id);
   if (!ok) throw new AppError(404, 'Meal plan not found');
   res.status(204).end();
 }));
 
 // POST /api/meal-plans/:id/meals — add a meal to a slot
 mealplanRouter.post('/:id/meals', asyncHandler(async (req, res) => {
+  const id = req.params.id as string;
   const data = addPlannedMealSchema.parse(req.body);
-  const pm = await mealplanService.addPlannedMeal(req.params.id, req.user!.id, data);
+  const pm = await mealplanService.addPlannedMeal(id, req.user!.id, data);
   if (!pm) throw new AppError(404, 'Meal plan not found');
   res.status(201).json(pm);
 }));
 
 // DELETE /api/meal-plans/:id/meals/:plannedMealId
 mealplanRouter.delete('/:id/meals/:plannedMealId', asyncHandler(async (req, res) => {
-  const ok = await mealplanService.removePlannedMeal(
-    req.params.id, req.params.plannedMealId, req.user!.id,
-  );
+  const id = req.params.id as string;
+  const plannedMealId = req.params.plannedMealId as string;
+  const ok = await mealplanService.removePlannedMeal(id, plannedMealId, req.user!.id);
   if (!ok) throw new AppError(404, 'Planned meal not found');
   res.status(204).end();
 }));
 
 // POST /api/meal-plans/:id/generate-list — create provisioning list from plan
 mealplanRouter.post('/:id/generate-list', asyncHandler(async (req, res) => {
-  const list = await mealplanService.generateProvisioningList(req.params.id, req.user!.id);
+  const id = req.params.id as string;
+  const list = await mealplanService.generateProvisioningList(id, req.user!.id);
   if (!list) throw new AppError(404, 'Meal plan not found or has no ingredients');
   res.status(201).json(list);
 }));

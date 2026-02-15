@@ -51,49 +51,53 @@ mealRouter.post('/', asyncHandler(async (req, res) => {
 
 // GET /api/meals/:id
 mealRouter.get('/:id', asyncHandler(async (req, res) => {
-  const meal = await mealService.getMeal(req.params.id, req.user!.id);
+  const id = req.params.id as string;
+  const meal = await mealService.getMeal(id, req.user!.id);
   if (!meal) throw new AppError(404, 'Meal not found');
   res.json(meal);
 }));
 
 // PATCH /api/meals/:id
 mealRouter.patch('/:id', asyncHandler(async (req, res) => {
+  const id = req.params.id as string;
   const data = updateMealSchema.parse(req.body);
-  const meal = await mealService.updateMeal(req.params.id, req.user!.id, data);
+  const meal = await mealService.updateMeal(id, req.user!.id, data);
   if (!meal) throw new AppError(404, 'Meal not found');
   res.json(meal);
 }));
 
 // DELETE /api/meals/:id
 mealRouter.delete('/:id', asyncHandler(async (req, res) => {
-  const ok = await mealService.deleteMeal(req.params.id, req.user!.id);
+  const id = req.params.id as string;
+  const ok = await mealService.deleteMeal(id, req.user!.id);
   if (!ok) throw new AppError(404, 'Meal not found');
   res.status(204).end();
 }));
 
 // POST /api/meals/:id/ingredients
 mealRouter.post('/:id/ingredients', asyncHandler(async (req, res) => {
+  const id = req.params.id as string;
   const data = ingredientSchema.parse(req.body);
-  const ingredient = await mealService.addIngredient(req.params.id, req.user!.id, data);
+  const ingredient = await mealService.addIngredient(id, req.user!.id, data);
   if (!ingredient) throw new AppError(404, 'Meal not found');
   res.status(201).json(ingredient);
 }));
 
 // PATCH /api/meals/:id/ingredients/:ingredientId
 mealRouter.patch('/:id/ingredients/:ingredientId', asyncHandler(async (req, res) => {
+  const id = req.params.id as string;
+  const ingredientId = req.params.ingredientId as string;
   const data = ingredientSchema.partial().parse(req.body);
-  const ingredient = await mealService.updateIngredient(
-    req.params.id, req.params.ingredientId, req.user!.id, data,
-  );
+  const ingredient = await mealService.updateIngredient(id, ingredientId, req.user!.id, data);
   if (!ingredient) throw new AppError(404, 'Ingredient not found');
   res.json(ingredient);
 }));
 
 // DELETE /api/meals/:id/ingredients/:ingredientId
 mealRouter.delete('/:id/ingredients/:ingredientId', asyncHandler(async (req, res) => {
-  const ok = await mealService.deleteIngredient(
-    req.params.id, req.params.ingredientId, req.user!.id,
-  );
+  const id = req.params.id as string;
+  const ingredientId = req.params.ingredientId as string;
+  const ok = await mealService.deleteIngredient(id, ingredientId, req.user!.id);
   if (!ok) throw new AppError(404, 'Ingredient not found');
   res.status(204).end();
 }));

@@ -66,14 +66,14 @@ export async function getDashboardStats(userId: string) {
   sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
 
   const [
-    totalItems,
+    allItems,
     lowStockItems,
     expiringSoon,
     activeLists,
-    pendingPurchases,
     recentLists,
+    meals,
   ] = await Promise.all([
-    prisma.inventoryItem.count({ where: { userId } }),
+    prisma.inventoryItem.findMany({ where: { userId } }),
     getLowStockItems(userId),
     prisma.inventoryItem.findMany({
       where: {
@@ -86,27 +86,55 @@ export async function getDashboardStats(userId: string) {
     prisma.provisioningList.count({
       where: { userId, status: 'ACTIVE' },
     }),
-    prisma.provisioningListItem.count({
-      where: {
-        purchased: false,
-        list: { userId, status: { in: ['ACTIVE', 'DRAFT'] } },
-      },
-    }),
     prisma.provisioningList.findMany({
       where: { userId },
       orderBy: { updatedAt: 'desc' },
       take: 5,
       include: { items: true },
     }),
+    prisma.meal.findMany({
+      where: { userId },
+      include: { ingredients: true },
+    }),
   ]);
 
+  // Inventory status: % of items with targets that are at or above target
+  const itemsWithTargets = allItems.filter((i) => i.targetQuantity > 0);
+  const stockedItems = itemsWithTargets.filter((i) => i.quantity >= i.targetQuantity);
+  const inventoryPct = itemsWithTargets.length > 0
+    ? Math.round((stockedItems.length / itemsWithTargets.length) * 100)
+    : 100;
+
+  // Items needed: sum of shortfall quantities across all below-target items
+  const itemsNeeded = lowStockItems.reduce((sum, i) => {
+    return sum + Math.round((i.targetQuantity - i.quantity) * 100) / 100;
+  }, 0);
+
+  // Meals stocked: meals where ALL ingredients are available in inventory
+  const inventoryMap = new Map(
+    allItems.map((i) => [`${i.name}|${i.category}|${i.unit}`, i.quantity]),
+  );
+  let mealsStocked = 0;
+  for (const meal of meals) {
+    if (meal.ingredients.length === 0) continue;
+    const fullyStocked = meal.ingredients.every((ing) => {
+      const key = `${ing.name}|${ing.category}|${ing.unit}`;
+      const onHand = inventoryMap.get(key) ?? 0;
+      return onHand >= ing.quantity;
+    });
+    if (fullyStocked) mealsStocked++;
+  }
+
   return {
-    totalItems,
+    totalItems: allItems.length,
+    inventoryPct,
     lowStockCount: lowStockItems.length,
+    itemsNeeded: Math.round(itemsNeeded * 100) / 100,
     lowStockItems,
     expiringSoon,
     activeLists,
-    pendingPurchases,
+    mealsStocked,
+    totalMeals: meals.length,
     recentLists,
   };
 }
