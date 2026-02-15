@@ -118,9 +118,21 @@ authRouter.post('/onboarding-seen', authMiddleware, async (req, res) => {
   res.json({ ok: true });
 });
 
-// Clear seed data (removes all user's inventory items and provisioning lists)
+// Clear seed data (removes all user's data)
 authRouter.post('/clear-seed-data', authMiddleware, async (req, res) => {
   const userId = req.user!.id;
+  await prisma.plannedMeal.deleteMany({
+    where: { mealPlan: { userId } },
+  });
+  await prisma.mealPlan.deleteMany({
+    where: { userId },
+  });
+  await prisma.mealIngredient.deleteMany({
+    where: { meal: { userId } },
+  });
+  await prisma.meal.deleteMany({
+    where: { userId },
+  });
   await prisma.provisioningListItem.deleteMany({
     where: { list: { userId } },
   });

@@ -8,6 +8,10 @@ import { DashboardPage } from './pages/DashboardPage';
 import { InventoryPage } from './pages/InventoryPage';
 import { ProvisioningListsPage } from './pages/ProvisioningListsPage';
 import { ListDetailPage } from './pages/ListDetailPage';
+import { MealsPage } from './pages/MealsPage';
+import { MealDetailPage } from './pages/MealDetailPage';
+import { MealPlansPage } from './pages/MealPlansPage';
+import { MealPlanDetailPage } from './pages/MealPlanDetailPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -31,6 +35,10 @@ export default function App() {
                 <Route path="/inventory" element={<InventoryPage />} />
                 <Route path="/provisioning" element={<ProvisioningListsPage />} />
                 <Route path="/provisioning/:id" element={<ListDetailPage />} />
+                <Route path="/meals" element={<MealsPage />} />
+                <Route path="/meals/:id" element={<MealDetailPage />} />
+                <Route path="/meal-plans" element={<MealPlansPage />} />
+                <Route path="/meal-plans/:id" element={<MealPlanDetailPage />} />
               </Route>
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
