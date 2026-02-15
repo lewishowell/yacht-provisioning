@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -63,9 +63,12 @@ const steps = [
   },
 ];
 
+const SWIPE_THRESHOLD = 50;
+
 export function GettingStartedModal({ open, onClose }: GettingStartedModalProps) {
   const [step, setStep] = useState(0);
   const [clearing, setClearing] = useState(false);
+  const touchStartX = useRef<number | null>(null);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const current = steps[step];
@@ -79,6 +82,18 @@ export function GettingStartedModal({ open, onClose }: GettingStartedModalProps)
 
   const handleBack = () => {
     if (step > 0) setStep(step - 1);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const diff = touchStartX.current - e.changedTouches[0].clientX;
+    touchStartX.current = null;
+    if (diff > SWIPE_THRESHOLD) handleNext();
+    else if (diff < -SWIPE_THRESHOLD) handleBack();
   };
 
   const handleGoToInventory = () => {
@@ -99,7 +114,11 @@ export function GettingStartedModal({ open, onClose }: GettingStartedModalProps)
   return (
     <div className="fixed inset-0 bg-black/50 z-50 overflow-y-auto">
       <div className="min-h-full flex items-start sm:items-center justify-center p-4 py-8">
-        <div className="bg-white rounded-xl shadow-xl w-full max-w-lg relative">
+        <div
+          className="bg-white rounded-xl shadow-xl w-full max-w-lg relative"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
           {/* Close button */}
           <button
             onClick={onClose}
