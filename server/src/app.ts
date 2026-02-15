@@ -8,6 +8,7 @@ import { inventoryRouter } from './routes/inventory.routes.js';
 import { provisioningRouter } from './routes/provisioning.routes.js';
 import { mealRouter } from './routes/meal.routes.js';
 import { mealplanRouter } from './routes/mealplan.routes.js';
+import { recipeRouter } from './routes/recipe.routes.js';
 import { errorHandler } from './middleware/error.middleware.js';
 
 const app = express();
@@ -25,6 +26,7 @@ app.use('/api/inventory', inventoryRouter);
 app.use('/api/provisioning-lists', provisioningRouter);
 app.use('/api/meals', mealRouter);
 app.use('/api/meal-plans', mealplanRouter);
+app.use('/api/recipes', recipeRouter);
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' });

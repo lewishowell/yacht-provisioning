@@ -8,6 +8,7 @@ const envSchema = z.object({
   CLIENT_URL: z.string().url().default('http://localhost:5173'),
   SERVER_URL: z.string().url().default('http://localhost:3001'),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+  SPOONACULAR_API_KEY: z.string().min(1).optional(),
 });
 
 export const env = envSchema.parse(process.env);
