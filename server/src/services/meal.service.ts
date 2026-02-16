@@ -100,3 +100,36 @@ export async function deleteIngredient(
   await prisma.mealIngredient.delete({ where: { id: ingredientId } });
   return true;
 }
+
+/**
+ * Check a meal's ingredients against the user's inventory.
+ * Returns each ingredient with its on-hand quantity and shortfall.
+ */
+export async function checkInventory(mealId: string, userId: string) {
+  const meal = await prisma.meal.findFirst({
+    where: { id: mealId, userId },
+    include: { ingredients: true },
+  });
+  if (!meal) return null;
+
+  const inventory = await prisma.inventoryItem.findMany({ where: { userId } });
+  const inventoryMap = new Map(
+    inventory.map((i) => [`${i.name.toLowerCase()}|${i.category}|${i.unit}`, i.quantity]),
+  );
+
+  return meal.ingredients.map((ing) => {
+    const key = `${ing.name.toLowerCase()}|${ing.category}|${ing.unit}`;
+    const onHand = inventoryMap.get(key) ?? 0;
+    const needed = Math.max(0, Math.round((ing.quantity - onHand) * 100) / 100);
+    return {
+      id: ing.id,
+      name: ing.name,
+      category: ing.category,
+      quantity: ing.quantity,
+      unit: ing.unit,
+      onHand,
+      needed,
+      inStock: onHand >= ing.quantity,
+    };
+  });
+}
