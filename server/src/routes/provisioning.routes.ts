@@ -97,6 +97,15 @@ provisioningRouter.post('/:id/add-restock-items', asyncHandler(async (req, res) 
   res.json(result);
 }));
 
+// POST /api/provisioning-lists/:id/add-meal-items — add missing ingredients from a meal
+provisioningRouter.post('/:id/add-meal-items', asyncHandler(async (req, res) => {
+  const id = req.params.id as string;
+  const { mealId } = z.object({ mealId: z.string().min(1) }).parse(req.body);
+  const result = await provisioningService.addMealItems(id, mealId, req.user!.id);
+  if (!result) throw new AppError(404, 'List or meal not found');
+  res.json(result);
+}));
+
 // POST /api/provisioning-lists/:id/items
 provisioningRouter.post('/:id/items', asyncHandler(async (req, res) => {
   const id = req.params.id as string;

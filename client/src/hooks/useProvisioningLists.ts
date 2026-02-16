@@ -126,6 +126,20 @@ export function useAddRestockItems() {
   });
 }
 
+export function useAddMealItems() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ listId, mealId }: { listId: string; mealId: string }) =>
+      api
+        .post(`/provisioning-lists/${listId}/add-meal-items`, { mealId })
+        .then((r) => r.data as { added: number; mealName: string }),
+    onSuccess: (_d, v) => {
+      qc.invalidateQueries({ queryKey: ['provisioning-lists', v.listId] });
+      qc.invalidateQueries({ queryKey: ['provisioning-lists'] });
+    },
+  });
+}
+
 export function usePurchaseItem() {
   const qc = useQueryClient();
   return useMutation({

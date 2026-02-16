@@ -101,3 +101,11 @@ mealRouter.delete('/:id/ingredients/:ingredientId', asyncHandler(async (req, res
   if (!ok) throw new AppError(404, 'Ingredient not found');
   res.status(204).end();
 }));
+
+// GET /api/meals/:id/check-inventory — compare ingredients against inventory
+mealRouter.get('/:id/check-inventory', asyncHandler(async (req, res) => {
+  const id = req.params.id as string;
+  const result = await mealService.checkInventory(id, req.user!.id);
+  if (!result) throw new AppError(404, 'Meal not found');
+  res.json(result);
+}));

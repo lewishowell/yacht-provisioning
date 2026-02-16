@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
-import type { Meal, MealIngredient, Category } from '../types';
+import type { Meal, MealIngredient, Category, IngredientCheck } from '../types';
 
 export function useMeals() {
   return useQuery({
@@ -113,5 +113,16 @@ export function useDeleteIngredient() {
       qc.invalidateQueries({ queryKey: ['meals', v.mealId] });
       qc.invalidateQueries({ queryKey: ['meals'] });
     },
+  });
+}
+
+export function useCheckInventory(mealId: string, enabled = false) {
+  return useQuery({
+    queryKey: ['meals', mealId, 'check-inventory'],
+    queryFn: async () => {
+      const { data } = await api.get<IngredientCheck[]>(`/meals/${mealId}/check-inventory`);
+      return data;
+    },
+    enabled: !!mealId && enabled,
   });
 }

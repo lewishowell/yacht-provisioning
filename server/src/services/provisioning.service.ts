@@ -183,6 +183,61 @@ export async function addRestockItems(listId: string, userId: string) {
   return { list: updated, added: toAdd.length };
 }
 
+/**
+ * Add missing ingredients from a meal to a provisioning list.
+ * Checks inventory for on-hand quantities and only adds shortfalls.
+ * Skips items already on the list (by name + category + unit).
+ */
+export async function addMealItems(listId: string, mealId: string, userId: string) {
+  const list = await prisma.provisioningList.findFirst({
+    where: { id: listId, userId },
+    include: { items: true },
+  });
+  if (!list) return null;
+
+  const meal = await prisma.meal.findFirst({
+    where: { id: mealId, userId },
+    include: { ingredients: true },
+  });
+  if (!meal) return null;
+
+  // Get inventory to check what's on hand
+  const inventory = await prisma.inventoryItem.findMany({ where: { userId } });
+  const inventoryMap = new Map(
+    inventory.map((i) => [`${i.name.toLowerCase()}|${i.category}|${i.unit}`, i.quantity]),
+  );
+
+  // Items already on the list
+  const existing = new Set(
+    list.items.map((i) => `${i.name.toLowerCase()}|${i.category}|${i.unit}`),
+  );
+
+  // Compute shortfalls
+  const toAdd = meal.ingredients
+    .map((ing) => {
+      const key = `${ing.name.toLowerCase()}|${ing.category}|${ing.unit}`;
+      const onHand = inventoryMap.get(key) ?? 0;
+      const needed = Math.max(0, Math.round((ing.quantity - onHand) * 100) / 100);
+      return { ...ing, needed, key };
+    })
+    .filter((ing) => ing.needed > 0 && !existing.has(ing.key));
+
+  if (toAdd.length === 0) return { added: 0, mealName: meal.name };
+
+  await prisma.provisioningListItem.createMany({
+    data: toAdd.map((ing) => ({
+      listId,
+      name: ing.name,
+      category: ing.category,
+      quantity: ing.needed,
+      unit: ing.unit,
+      itemType: 'trip',
+    })),
+  });
+
+  return { added: toAdd.length, mealName: meal.name };
+}
+
 export async function exportListCSV(id: string, userId: string) {
   const list = await getList(id, userId);
   if (!list) return null;

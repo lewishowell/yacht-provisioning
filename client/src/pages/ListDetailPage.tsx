@@ -11,6 +11,7 @@ import {
   Save,
   X,
   PackagePlus,
+  UtensilsCrossed,
 } from 'lucide-react';
 import {
   useProvisioningList,
@@ -20,7 +21,9 @@ import {
   useDeleteListItem,
   usePurchaseItem,
   useAddRestockItems,
+  useAddMealItems,
 } from '../hooks/useProvisioningLists';
+import { useMeals } from '../hooks/useMeals';
 import type { Category, ListStatus, ProvisioningListItem } from '../types';
 
 const UNITS = ['pcs', 'lbs', 'oz', 'gal', 'qt', 'fl oz', 'cups', 'bottles', 'cans', 'boxes', 'packs', 'rolls'];
@@ -53,8 +56,12 @@ export function ListDetailPage() {
   const deleteItem = useDeleteListItem();
   const purchaseItem = usePurchaseItem();
   const addRestockItems = useAddRestockItems();
+  const addMealItems = useAddMealItems();
+  const { data: allMeals } = useMeals();
 
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showMealPicker, setShowMealPicker] = useState(false);
+  const [mealAddResult, setMealAddResult] = useState<{ added: number; mealName: string } | null>(null);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ name: '', category: 'FOOD' as Category, quantity: 1, unit: '' });
   const [newItem, setNewItem] = useState({
@@ -199,6 +206,18 @@ export function ListDetailPage() {
               <PackagePlus className="h-4 w-4" />
               {addRestockItems.isPending ? 'Adding...' : 'Add Restock Items'}
             </button>
+            {allMeals && allMeals.length > 0 && (
+              <button
+                onClick={() => { setShowMealPicker(!showMealPicker); setMealAddResult(null); }}
+                className={`flex items-center gap-1 text-sm px-3 py-1.5 rounded-lg transition-colors ${
+                  showMealPicker
+                    ? 'bg-purple-500 text-white'
+                    : 'border border-purple-300 text-purple-600 hover:bg-purple-50'
+                }`}
+              >
+                <UtensilsCrossed className="h-4 w-4" /> Add from Meal
+              </button>
+            )}
             <button
               onClick={() => setShowAddForm(true)}
               className="flex items-center gap-1 text-sm px-3 py-1.5 rounded-lg bg-ocean text-white hover:bg-ocean-light transition-colors"
@@ -224,6 +243,49 @@ export function ListDetailPage() {
           />
         </div>
       </div>
+
+      {/* Meal Picker */}
+      {showMealPicker && (
+        <div className="bg-white rounded-xl shadow-sm p-5 mb-6 no-print">
+          <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+            <UtensilsCrossed className="h-4 w-4 text-purple-500" />
+            Add missing ingredients from a meal
+          </h3>
+          {mealAddResult && (
+            <div className="text-sm mb-3 px-3 py-2 rounded-lg bg-purple-50 text-purple-700">
+              {mealAddResult.added > 0
+                ? `Added ${mealAddResult.added} missing ingredient${mealAddResult.added === 1 ? '' : 's'} from "${mealAddResult.mealName}".`
+                : `All ingredients from "${mealAddResult.mealName}" are already on this list or in stock.`}
+            </div>
+          )}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+            {allMeals?.map((meal) => (
+              <button
+                key={meal.id}
+                onClick={async () => {
+                  const result = await addMealItems.mutateAsync({ listId: id!, mealId: meal.id });
+                  setMealAddResult(result);
+                }}
+                disabled={addMealItems.isPending}
+                className="text-left px-3 py-2 rounded-lg border border-gray-200 hover:border-purple-300 hover:bg-purple-50 transition-colors disabled:opacity-50"
+              >
+                <span className="font-medium text-sm">{meal.name}</span>
+                {meal.ingredients && (
+                  <span className="text-xs text-gray-400 ml-1">
+                    ({meal.ingredients.length} ingredient{meal.ingredients.length === 1 ? '' : 's'})
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={() => { setShowMealPicker(false); setMealAddResult(null); }}
+            className="mt-3 text-sm text-gray-500 hover:text-gray-700"
+          >
+            Close
+          </button>
+        </div>
+      )}
 
       {/* Add Item Form */}
       {showAddForm && (

@@ -8,6 +8,11 @@ import {
   Save,
   X,
   Users,
+  PackageCheck,
+  ShoppingCart,
+  Check,
+  AlertTriangle,
+  Loader2,
 } from 'lucide-react';
 import {
   useMeal,
@@ -15,7 +20,13 @@ import {
   useAddIngredient,
   useUpdateIngredient,
   useDeleteIngredient,
+  useCheckInventory,
 } from '../hooks/useMeals';
+import {
+  useProvisioningLists,
+  useCreateList,
+  useAddMealItems,
+} from '../hooks/useProvisioningLists';
 import type { Category, MealIngredient } from '../types';
 
 const UNITS = ['pcs', 'lbs', 'oz', 'gal', 'qt', 'fl oz', 'cups', 'bottles', 'cans', 'boxes', 'packs', 'rolls'];
@@ -47,6 +58,17 @@ export function MealDetailPage() {
 
   const [editingMeal, setEditingMeal] = useState(false);
   const [mealForm, setMealForm] = useState({ name: '', description: '', servings: 2 });
+
+  // Inventory check state
+  const [showInventoryCheck, setShowInventoryCheck] = useState(false);
+  const { data: inventoryCheck, isLoading: checkLoading } = useCheckInventory(id!, showInventoryCheck);
+
+  // Add to list state
+  const [showAddToList, setShowAddToList] = useState(false);
+  const { data: lists } = useProvisioningLists();
+  const createList = useCreateList();
+  const addMealItems = useAddMealItems();
+  const [addResult, setAddResult] = useState<{ added: number; mealName: string } | null>(null);
 
   const handleAddIngredient = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,6 +108,17 @@ export function MealDetailPage() {
     setEditingMeal(false);
   };
 
+  const handleAddToExistingList = async (listId: string) => {
+    const result = await addMealItems.mutateAsync({ listId, mealId: id! });
+    setAddResult(result);
+  };
+
+  const handleAddToNewList = async () => {
+    const list = await createList.mutateAsync({ name: `${meal?.name ?? 'Meal'} Shopping List` });
+    const result = await addMealItems.mutateAsync({ listId: list.id, mealId: id! });
+    setAddResult(result);
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center py-12">
@@ -104,6 +137,9 @@ export function MealDetailPage() {
       </div>
     );
   }
+
+  const missingCount = inventoryCheck?.filter((i) => !i.inStock).length ?? 0;
+  const totalChecked = inventoryCheck?.length ?? 0;
 
   return (
     <div>
@@ -173,6 +209,161 @@ export function MealDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Action buttons */}
+      {meal.ingredients.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-4">
+          <button
+            onClick={() => { setShowInventoryCheck(!showInventoryCheck); setAddResult(null); }}
+            className={`flex items-center gap-2 text-sm px-4 py-2 rounded-lg border transition-colors ${
+              showInventoryCheck
+                ? 'border-teal bg-teal/5 text-teal'
+                : 'border-gray-300 hover:border-teal hover:text-teal'
+            }`}
+          >
+            <PackageCheck className="h-4 w-4" /> Check Inventory
+          </button>
+          <button
+            onClick={() => { setShowAddToList(!showAddToList); setAddResult(null); }}
+            className={`flex items-center gap-2 text-sm px-4 py-2 rounded-lg border transition-colors ${
+              showAddToList
+                ? 'border-ocean bg-ocean/5 text-ocean'
+                : 'border-gray-300 hover:border-ocean hover:text-ocean'
+            }`}
+          >
+            <ShoppingCart className="h-4 w-4" /> Add to Shopping List
+          </button>
+        </div>
+      )}
+
+      {/* Inventory check panel */}
+      {showInventoryCheck && (
+        <div className="bg-white rounded-xl shadow-sm p-5 mb-4">
+          <h3 className="font-semibold mb-3">Inventory Check</h3>
+          {checkLoading ? (
+            <div className="flex justify-center py-4">
+              <Loader2 className="h-6 w-6 animate-spin text-ocean" />
+            </div>
+          ) : inventoryCheck ? (
+            <>
+              <div className="text-sm mb-3">
+                {missingCount === 0 ? (
+                  <span className="text-teal flex items-center gap-1">
+                    <Check className="h-4 w-4" /> All {totalChecked} ingredients in stock!
+                  </span>
+                ) : (
+                  <span className="text-amber flex items-center gap-1">
+                    <AlertTriangle className="h-4 w-4" /> {missingCount} of {totalChecked} ingredients need restocking
+                  </span>
+                )}
+              </div>
+              <div className="space-y-2">
+                {inventoryCheck.map((ing) => (
+                  <div
+                    key={ing.id}
+                    className={`flex items-center justify-between text-sm rounded-lg px-3 py-2 ${
+                      ing.inStock ? 'bg-green-50' : 'bg-red-50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      {ing.inStock ? (
+                        <Check className="h-4 w-4 text-teal flex-shrink-0" />
+                      ) : (
+                        <AlertTriangle className="h-4 w-4 text-coral flex-shrink-0" />
+                      )}
+                      <span className="font-medium">{ing.name}</span>
+                    </div>
+                    <div className="text-right text-xs text-gray-500">
+                      <span>Need {ing.quantity} {ing.unit}</span>
+                      <span className="mx-1">/</span>
+                      <span>Have {ing.onHand}</span>
+                      {!ing.inStock && (
+                        <span className="ml-2 text-coral font-medium">
+                          (need {ing.needed} more)
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {missingCount > 0 && (
+                <button
+                  onClick={() => { setShowInventoryCheck(false); setShowAddToList(true); }}
+                  className="mt-3 flex items-center gap-2 text-sm text-ocean hover:underline"
+                >
+                  <ShoppingCart className="h-4 w-4" /> Add missing items to a shopping list
+                </button>
+              )}
+            </>
+          ) : null}
+        </div>
+      )}
+
+      {/* Add to shopping list panel */}
+      {showAddToList && (
+        <div className="bg-white rounded-xl shadow-sm p-5 mb-4">
+          <h3 className="font-semibold mb-3">Add to Shopping List</h3>
+          <p className="text-sm text-gray-500 mb-3">
+            Missing ingredients (not in your inventory) will be added to the selected list.
+          </p>
+
+          {addResult !== null ? (
+            <div className="text-sm">
+              {addResult.added > 0 ? (
+                <span className="text-teal flex items-center gap-1">
+                  <Check className="h-4 w-4" />
+                  Added {addResult.added} missing ingredient{addResult.added !== 1 ? 's' : ''} to the list.
+                </span>
+              ) : (
+                <span className="text-gray-500">
+                  No missing ingredients to add (everything is in stock or already on the list).
+                </span>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <button
+                onClick={handleAddToNewList}
+                disabled={addMealItems.isPending || createList.isPending}
+                className="w-full flex items-center justify-between px-4 py-3 rounded-lg border border-dashed border-ocean text-ocean hover:bg-ocean/5 transition-colors text-sm disabled:opacity-50"
+              >
+                <span className="flex items-center gap-2">
+                  <Plus className="h-4 w-4" /> Create new shopping list
+                </span>
+                {(addMealItems.isPending || createList.isPending) && (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                )}
+              </button>
+
+              {lists && lists.filter((l) => l.status !== 'COMPLETED' && l.status !== 'ARCHIVED').length > 0 && (
+                <>
+                  <div className="text-xs text-gray-400 uppercase tracking-wide pt-2">
+                    Or add to existing list
+                  </div>
+                  {lists
+                    .filter((l) => l.status !== 'COMPLETED' && l.status !== 'ARCHIVED')
+                    .map((list) => (
+                      <button
+                        key={list.id}
+                        onClick={() => handleAddToExistingList(list.id)}
+                        disabled={addMealItems.isPending}
+                        className="w-full flex items-center justify-between px-4 py-3 rounded-lg border border-gray-200 hover:border-ocean hover:bg-ocean/5 transition-colors text-sm text-left disabled:opacity-50"
+                      >
+                        <div>
+                          <span className="font-medium">{list.name}</span>
+                          <span className="ml-2 text-xs text-gray-400">{list.status}</span>
+                        </div>
+                        {addMealItems.isPending && (
+                          <Loader2 className="h-4 w-4 animate-spin text-ocean" />
+                        )}
+                      </button>
+                    ))}
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Ingredients */}
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">

@@ -92,6 +92,17 @@ export interface MealIngredient {
   unit: string;
 }
 
+export interface IngredientCheck {
+  id: string;
+  name: string;
+  category: string;
+  quantity: number;
+  unit: string;
+  onHand: number;
+  needed: number;
+  inStock: boolean;
+}
+
 export interface Meal {
   id: string;
   userId: string;
