@@ -5,6 +5,7 @@ import {
   Package,
   ClipboardList,
   UtensilsCrossed,
+  Search,
   Rocket,
   ChevronRight,
   ChevronLeft,
@@ -59,6 +60,16 @@ const steps = [
       'Build a library of your favorite meals with their ingredients. Once saved, you can reuse them across any trip or event.',
       'Create a meal plan by assigning meals to breakfast, lunch, and dinner slots for each day.',
       'When your plan is ready, generate a shopping list with one click \u2014 it checks your inventory and only adds what you\u2019re missing.',
+    ],
+  },
+  {
+    icon: Search,
+    iconColor: 'bg-teal',
+    title: 'Step 4: Recipe Search',
+    content: [
+      'Don\u2019t want to build meals from scratch? Use the "Find Recipe" button on the Meals page to search thousands of recipes online.',
+      'Browse results with photos, cook times, and serving sizes. When you find one you like, tap "Import as Meal" \u2014 all the ingredients are added automatically.',
+      'From there the imported meal works just like any other: add it to a meal plan, generate a shopping list, and the app will check your inventory for what\u2019s already on hand.',
     ],
   },
   {
