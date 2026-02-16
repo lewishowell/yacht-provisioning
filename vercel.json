@@ -1,6 +1,6 @@
 {
   "installCommand": "npm install --include=dev",
-  "buildCommand": "(npx prisma migrate deploy --schema=server/prisma/schema.prisma || sleep 5 && npx prisma migrate deploy --schema=server/prisma/schema.prisma) && npm run build -w client",
+  "buildCommand": "PRISMA_SCHEMA_DISABLE_ADVISORY_LOCK=1 npx prisma migrate deploy --schema=server/prisma/schema.prisma && npm run build -w client",
   "outputDirectory": "client/dist",
   "framework": null,
   "rewrites": [
